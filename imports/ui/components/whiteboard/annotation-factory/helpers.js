@@ -246,7 +246,7 @@ const isDeletedAnnotation = (annotationEraser, annotation, slideWidth, slideHeig
       var lineDistance = getDistance(linePoints[0], linePoints[1], linePoints[2], linePoints[3]);
       var firstEraserDistance = getDistance(linePoints[0], linePoints[1], eraserPoints[0], eraserPoints[1]);
       var secondEraserDistance = getDistance(eraserPoints[0], eraserPoints[1], linePoints[2], linePoints[3]);
-      if(lineDistance + annotationEraser.annotationInfo.thickness + annotation.annotationInfo.thickness > firstEraserDistance + secondEraserDistance)
+      if(lineDistance + annotation.annotationInfo.thickness > firstEraserDistance + secondEraserDistance)
         return 0;
       break;
     case "ellipse":
@@ -260,6 +260,14 @@ const isDeletedAnnotation = (annotationEraser, annotation, slideWidth, slideHeig
         return 0;
       break; 
     case "triangle":
+      var trianglePoints = annotation.annotationInfo.points,
+        thickness = annotation.annotationInfo.thickness;
+      var secondDotX = (trianglePoints[0] < trianglePoints[2]) ? trianglePoints[0] + Math.abs(trianglePoints[0] - trianglePoints[2]) / 2 : trianglePoints[2] + Math.abs(trianglePoints[0] - trianglePoints[2]) / 2;
+      var firstLine = [trianglePoints[0], trianglePoints[3], trianglePoints[2], trianglePoints[3]],
+        secondLine = [secondDotX, trianglePoints[1], trianglePoints[0], trianglePoints[3]],
+        trirdLine = [secondDotX, trianglePoints[1], trianglePoints[2], trianglePoints[3]];
+      if(isLinePoint(firstLine, eraserPoints, thickness) || isLinePoint(secondLine, eraserPoints, thickness) || isLinePoint(trirdLine, eraserPoints, thickness))
+        return 0;
       break;
     case "rectangle":
       break;
@@ -271,6 +279,15 @@ const isDeletedAnnotation = (annotationEraser, annotation, slideWidth, slideHeig
 
 getDistance = (x1, y1, x2, y2) => {
   return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+}
+
+isLinePoint = (linePoints, eraserPoints, thickness) => {
+  var lineDistance = getDistance(linePoints[0], linePoints[1], linePoints[2], linePoints[3]);
+  var firstEraserDistance = getDistance(linePoints[0], linePoints[1], eraserPoints[0], eraserPoints[1]);
+  var secondEraserDistance = getDistance(eraserPoints[0], eraserPoints[1], linePoints[2], linePoints[3]);
+  if(lineDistance + thickness > firstEraserDistance + secondEraserDistance)
+    return 1;
+  return 0;
 }
 
 isEllipsePoint = (ellipsePoints, point) => {
