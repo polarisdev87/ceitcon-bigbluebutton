@@ -257,7 +257,7 @@ const isDeletedAnnotation = (annotationEraser, annotation, slideWidth, slideHeig
       var ellipseOuterPoints = [ellispePointsCopy[0]-thickness, ellispePointsCopy[1]-thickness, ellispePointsCopy[2]+thickness, ellispePointsCopy[3]+thickness],ellipseInnerPoints = [ellispePointsCopy[0]+thickness, ellispePointsCopy[1]+thickness, ellispePointsCopy[2]-thickness, ellispePointsCopy[3]-thickness];
       console.log(isEllipsePoint(ellipseOuterPoints, eraserPoints) <= 1 && isEllipsePoint(ellipseInnerPoints, eraserPoints) >= 1)
 
-      if(isEllipsePoint(ellipseOuterPoints, eraserPoints) <= 1 && isEllipsePoint(ellipseInnerPoints, eraserPoints) >= 1)
+      if(isEllipsePoint(ellipseOuterPoints, eraserPoints) && !isEllipsePoint(ellipseInnerPoints, eraserPoints))
         return 0;
       break; 
     case "triangle":
@@ -271,6 +271,14 @@ const isDeletedAnnotation = (annotationEraser, annotation, slideWidth, slideHeig
         return 0;
       break;
     case "rectangle":
+      var rectPoints = annotation.annotationInfo.points,
+        thickness = annotation.annotationInfo.thickness;
+
+      var rectPointsCopy = [Math.min(rectPoints[0], rectPoints[2]), Math.min(rectPoints[1], rectPoints[3]), Math.max(rectPoints[0], rectPoints[2]),Math.max(rectPoints[1], rectPoints[3])];
+      var rectOuterPoints = [rectPointsCopy[0]-thickness, rectPointsCopy[1]-thickness, rectPointsCopy[2]+thickness, rectPointsCopy[3]+thickness],rectInnerPoints = [rectPointsCopy[0]+thickness, rectPointsCopy[1]+thickness, rectPointsCopy[2]-thickness, rectPointsCopy[3]-thickness];
+
+      if(isRectPoint(rectOuterPoints, eraserPoints) && !isRectPoint(rectInnerPoints, eraserPoints))
+        return 0;
       break;
     case "pencil":
       break;  
@@ -298,7 +306,13 @@ isEllipsePoint = (ellipsePoints, point) => {
     k = (ellipsePoints[1] < ellipsePoints[3]) ? ellipsePoints[1] + b : ellipsePoints[3] + b;
   var p = (Math.pow((point[0] - h), 2) / Math.pow(a, 2)) 
   + (Math.pow((point[1] - k), 2) / Math.pow(b, 2));
-  return p;
+  return p <= 1;
+}
+
+isRectPoint = (rectPoint, point) => {
+  if(rectPoint[0] <= point[0] &&  point[0] <= rectPoint[2] && rectPoint[1] <= point[1] && point[1] <= rectPoint[3])
+    return 1;
+  return 0;
 }
 
 export default {
