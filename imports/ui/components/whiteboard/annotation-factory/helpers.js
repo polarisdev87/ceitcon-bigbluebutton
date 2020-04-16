@@ -250,11 +250,12 @@ const isDeletedAnnotation = (annotationEraser, annotation, slideWidth, slideHeig
         return 0;
       break;
     case "ellipse":
-      var ellispePoints = annotation.annotationInfo.points;
-      var thickness = annotation.annotationInfo.thickness;
+      var ellispePoints = annotation.annotationInfo.points,
+        thickness = annotation.annotationInfo.thickness;
+      var ellispePointsCopy = [Math.min(ellispePoints[0], ellispePoints[2]), Math.min(ellispePoints[1], ellispePoints[3]), Math.max(ellispePoints[0], ellispePoints[2]),Math.max(ellispePoints[1], ellispePoints[3])];
 
-      var ellipseOuterPoints = [ellispePoints[0]-thickness, ellispePoints[1]-thickness, ellispePoints[2]+thickness, ellispePoints[3]+thickness];
-      var ellipseInnerPoints = [ellispePoints[0]+thickness, ellispePoints[1]+thickness, ellispePoints[2]-thickness, ellispePoints[3]-thickness];
+      var ellipseOuterPoints = [ellispePointsCopy[0]-thickness, ellispePointsCopy[1]-thickness, ellispePointsCopy[2]+thickness, ellispePointsCopy[3]+thickness],ellipseInnerPoints = [ellispePointsCopy[0]+thickness, ellispePointsCopy[1]+thickness, ellispePointsCopy[2]-thickness, ellispePointsCopy[3]-thickness];
+      console.log(isEllipsePoint(ellipseOuterPoints, eraserPoints) <= 1 && isEllipsePoint(ellipseInnerPoints, eraserPoints) >= 1)
 
       if(isEllipsePoint(ellipseOuterPoints, eraserPoints) <= 1 && isEllipsePoint(ellipseInnerPoints, eraserPoints) >= 1)
         return 0;
