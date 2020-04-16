@@ -238,25 +238,33 @@ const drawShape = (canvas, context, type, annotationInfo, slideWidth, slideHeigh
     }
 }
 
-const isDeletedAnnotation = (annotationEraser, annotation) => {
+const isDeletedAnnotation = (annotationEraser, annotation, slideWidth, slideHeight) => {
+  var eraserPoints = annotationEraser.annotationInfo.points;
   switch (annotation.annotationType) {
     case "line":
       var linePoints = annotation.annotationInfo.points;
-      var eraserPoints = annotationEraser.annotationInfo.points;
       var lineDistance = getDistance(linePoints[0], linePoints[1], linePoints[2], linePoints[3]);
       var firstEraserDistance = getDistance(linePoints[0], linePoints[1], eraserPoints[0], eraserPoints[1]);
       var secondEraserDistance = getDistance(eraserPoints[0], eraserPoints[1], linePoints[2], linePoints[3]);
       if(lineDistance + annotationEraser.annotationInfo.thickness + annotation.annotationInfo.thickness > firstEraserDistance + secondEraserDistance)
         return 0;
-    break;
+      break;
     case "ellipse":
-    break; 
+      var ellispePoints = annotation.annotationInfo.points;
+      var thickness = annotation.annotationInfo.thickness;
+
+      var ellipseOuterPoints = [ellispePoints[0]-thickness, ellispePoints[1]-thickness, ellispePoints[2]+thickness, ellispePoints[3]+thickness];
+      var ellipseInnerPoints = [ellispePoints[0]+thickness, ellispePoints[1]+thickness, ellispePoints[2]-thickness, ellispePoints[3]-thickness];
+
+      if(isEllipsePoint(ellipseOuterPoints, eraserPoints) <= 1 && isEllipsePoint(ellipseInnerPoints, eraserPoints) >= 1)
+        return 0;
+      break; 
     case "triangle":
-    break;
+      break;
     case "rectangle":
-    break;
+      break;
     case "pencil":
-    break;  
+      break;  
   }
   return 1;
 }
@@ -264,6 +272,17 @@ const isDeletedAnnotation = (annotationEraser, annotation) => {
 getDistance = (x1, y1, x2, y2) => {
   return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
 }
+
+isEllipsePoint = (ellipsePoints, point) => {
+  var a = Math.abs(ellipsePoints[2] - ellipsePoints[0]) / 2,
+    b = Math.abs(ellipsePoints[3] - ellipsePoints[1]) / 2,
+    h = (ellipsePoints[0] < ellipsePoints[2]) ? ellipsePoints[0] + a : ellipsePoints[2] + a,
+    k = (ellipsePoints[1] < ellipsePoints[3]) ? ellipsePoints[1] + b : ellipsePoints[3] + b;
+  var p = (Math.pow((point[0] - h), 2) / Math.pow(a, 2)) 
+  + (Math.pow((point[1] - k), 2) / Math.pow(b, 2));
+  return p;
+}
+
 export default {
     getFormattedColor,
     getStrokeWidth,

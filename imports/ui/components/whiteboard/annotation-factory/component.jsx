@@ -51,7 +51,7 @@ export default class AnnotationFactory extends Component {
         if(annotation.annotationType == "elementEraser") { 
           for(let i = 0; i < index; i ++) {
             if(annotationArray[i].annotationType != "elementEraser" && annotationVisible[i]) {
-              annotationVisible[i] = AnnotationHelpers.isDeletedAnnotation(annotation, annotationArray[i]);
+              annotationVisible[i] = AnnotationHelpers.isDeletedAnnotation(annotation, annotationArray[i], slideWidth, slideHeight);
             }
           }
         }
