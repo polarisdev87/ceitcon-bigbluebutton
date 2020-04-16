@@ -36,10 +36,30 @@ export default class AnnotationFactory extends Component {
     const ctxStatic = this.canvasStatic.getContext('2d');
     ctxStatic.clearRect(0, 0, slideWidth, slideHeight);
 
+    var annotationArray = [];
+    var annotationVisible = new Array(staticItems.length).fill(1);
+
     if(staticItems) {
       staticItems.map((annotationDef, index) => {
         const annotation = AnnotationService.getAnnotationById(annotationDef._id);
-        AnnotationHelpers.drawShape(canvasStatic, ctxStatic, annotation.annotationType, annotation.annotationInfo, slideWidth, slideHeight);
+        annotationArray.push(annotation);
+      });
+
+      console.log("annotationArray", annotationArray);
+
+      annotationArray.map((annotation, index) => {
+        if(annotation.annotationType == "elementEraser") { 
+          for(let i = 0; i < index; i ++) {
+            if(annotationArray[i].annotationType != "elementEraser" && annotationVisible[i]) {
+              annotationVisible[i] = AnnotationHelpers.isDeletedAnnotation(annotation, annotationArray[i]);
+            }
+          }
+        }
+      });
+      annotationArray.map((annotation, index) => {
+        if(annotationVisible[index]) {
+          AnnotationHelpers.drawShape(canvasStatic, ctxStatic, annotation.annotationType, annotation.annotationInfo, slideWidth, slideHeight);  
+        }
       });
     }
   }

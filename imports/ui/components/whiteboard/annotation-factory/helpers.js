@@ -238,10 +238,35 @@ const drawShape = (canvas, context, type, annotationInfo, slideWidth, slideHeigh
     }
 }
 
+const isDeletedAnnotation = (annotationEraser, annotation) => {
+  switch (annotation.annotationType) {
+    case "line":
+      var linePoints = annotation.annotationInfo.points;
+      var eraserPoints = annotationEraser.annotationInfo.points;
+      var lineDistance = getDistance(linePoints[0], linePoints[1], linePoints[2], linePoints[3]);
+      var firstEraserDistance = getDistance(linePoints[0], linePoints[1], eraserPoints[0], eraserPoints[1]);
+      var secondEraserDistance = getDistance(eraserPoints[0], eraserPoints[1], linePoints[2], linePoints[3]);
+      if(lineDistance + annotationEraser.annotationInfo.thickness + annotation.annotationInfo.thickness > firstEraserDistance + secondEraserDistance)
+        return 0;
+    break;
+    case "ellipse":
+    break; 
+    case "triangle":
+    break;
+    case "rectangle":
+    break;
+    case "pencil":
+    break;  
+  }
+  return 1;
+}
 
-
+getDistance = (x1, y1, x2, y2) => {
+  return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+}
 export default {
     getFormattedColor,
     getStrokeWidth,
-    drawShape
+    drawShape,
+    isDeletedAnnotation
 };
