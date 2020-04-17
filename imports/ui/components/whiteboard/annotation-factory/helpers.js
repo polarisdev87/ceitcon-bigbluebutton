@@ -1,5 +1,4 @@
 import { fabric } from 'fabric-webpack';
-import {vmath} from 'vmath';
 
 const ANNOTATION_CONFIG = Meteor.settings.public.whiteboard.annotations;
 const DRAW_END = ANNOTATION_CONFIG.status.end;
@@ -296,6 +295,9 @@ const isDeletedAnnotation = (annotationEraser, annotation, slideWidth, slideHeig
             j += 2;
             break;
           case 3:
+            var quadraticPoints = [pencilPoints[j - 2], pencilPoints[j - 1], pencilPoints[j], pencilPoints[j + 1], pencilPoints[j + 2], pencilPoints[j + 3]]
+            if(isQuadraticPoint(beizerPoints, eraserPoints, thickness))
+              return 0;
             j += 4;
             break;
           case 4:
@@ -340,7 +342,7 @@ isRectPoint = (rectPoint, point) => {
   return 0;
 }
 
-function isBezierPoint(points, eraserPoints, thickness) {
+isBezierPoint = (points, eraserPoints, thickness) => {
   var t = 0;
   while(t < 1) {
     bezierXY = getBezierXY(t, points[0], points[1], points[2], points[3], points[4], points[5], points[6], points[7]);
@@ -351,11 +353,28 @@ function isBezierPoint(points, eraserPoints, thickness) {
   return 0;
 }
 
-function getBezierXY(t, sx, sy, cp1x, cp1y, cp2x, cp2y, ex, ey) {
+getBezierXY = (t, sx, sy, cp1x, cp1y, cp2x, cp2y, ex, ey) => {
   var x = Math.pow(1-t,3) * sx + 3 * t * Math.pow(1 - t, 2) * cp1x 
   + 3 * t * t * (1 - t) * cp2x + t * t * t * ex,
     y= Math.pow(1-t,3) * sy + 3 * t * Math.pow(1 - t, 2) * cp1y 
   + 3 * t * t * (1 - t) * cp2y + t * t * t * ey;
+  return [x, y];
+}
+
+isQuadraticPoint = (points, eraserPoints, thickness) => {
+  var t = 0;
+  while(t < 1) {
+    quadraticXY = getQuadraticXY(t, points[0], points[1], points[2], points[3], points[4], points[5]);
+    if (getDistance(eraserPoints[0], eraserPoints[1], quadraticXY[0], quadraticXY[1]) < thickness)
+      return 1;
+    t += 0.01;
+  }
+  return 0;
+}
+
+getQuadraticXY = (t, sx, sy, cp1x, cp1y, ex, ey) => {
+  var x = (1-t) * (1-t) * sx + 2 * (1-t) * t * cp1x + t * t * ex,
+    y = (1-t) * (1-t) * sy + 2 * (1-t) * t * cp1y + t * t * ey;
   return [x, y];
 }
 
