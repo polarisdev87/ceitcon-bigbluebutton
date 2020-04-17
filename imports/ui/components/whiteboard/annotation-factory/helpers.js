@@ -255,7 +255,6 @@ const isDeletedAnnotation = (annotationEraser, annotation, slideWidth, slideHeig
       var ellispePointsCopy = [Math.min(ellispePoints[0], ellispePoints[2]), Math.min(ellispePoints[1], ellispePoints[3]), Math.max(ellispePoints[0], ellispePoints[2]),Math.max(ellispePoints[1], ellispePoints[3])];
 
       var ellipseOuterPoints = [ellispePointsCopy[0]-thickness, ellispePointsCopy[1]-thickness, ellispePointsCopy[2]+thickness, ellispePointsCopy[3]+thickness],ellipseInnerPoints = [ellispePointsCopy[0]+thickness, ellispePointsCopy[1]+thickness, ellispePointsCopy[2]-thickness, ellispePointsCopy[3]-thickness];
-      console.log(isEllipsePoint(ellipseOuterPoints, eraserPoints) <= 1 && isEllipsePoint(ellipseInnerPoints, eraserPoints) >= 1)
 
       if(isEllipsePoint(ellipseOuterPoints, eraserPoints) && !isEllipsePoint(ellipseInnerPoints, eraserPoints))
         return 0;
@@ -281,6 +280,27 @@ const isDeletedAnnotation = (annotationEraser, annotation, slideWidth, slideHeig
         return 0;
       break;
     case "pencil":
+      var pencilPoints = annotation.annotationInfo.points,
+        pencilCommands = annotation.annotationInfo.commands,
+        thickness = annotation.annotationInfo.thickness;
+      for(let i = 0, j = 0; i < pencilCommands.legnth; i += 1) {
+        switch(pencilCommands[i]) {
+          case 1:
+            break;
+          case 2:
+            var linePoints = [pencilPoints[j - 2], pencilPoints[j - 1], pencilPoints[j], pencilPoints[j + 1]];
+            if(isLinePoint(linePoints, eraserPoints, thickness))
+              return 0;
+            i += 2;
+            break;
+          case 3:
+            i += 4;
+            break;
+          case 4:
+            i += 6;
+            break;
+        }
+      }
       break;  
   }
   return 1;
