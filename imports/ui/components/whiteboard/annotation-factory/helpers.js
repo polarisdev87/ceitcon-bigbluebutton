@@ -1,4 +1,5 @@
 import { fabric } from 'fabric-webpack';
+import {vmath} from 'vmath';
 
 const ANNOTATION_CONFIG = Meteor.settings.public.whiteboard.annotations;
 const DRAW_END = ANNOTATION_CONFIG.status.end;
@@ -283,21 +284,25 @@ const isDeletedAnnotation = (annotationEraser, annotation, slideWidth, slideHeig
       var pencilPoints = annotation.annotationInfo.points,
         pencilCommands = annotation.annotationInfo.commands,
         thickness = annotation.annotationInfo.thickness;
-      for(let i = 0, j = 0; i < pencilCommands.legnth; i += 1) {
+      for(let i = 0, j = 0; i < pencilCommands.length; i += 1) {
         switch(pencilCommands[i]) {
           case 1:
+            j += 2;
             break;
           case 2:
             var linePoints = [pencilPoints[j - 2], pencilPoints[j - 1], pencilPoints[j], pencilPoints[j + 1]];
             if(isLinePoint(linePoints, eraserPoints, thickness))
               return 0;
-            i += 2;
+            j += 2;
             break;
           case 3:
-            i += 4;
+            j += 4;
             break;
           case 4:
-            i += 6;
+            var beizerPoints = [pencilPoints[j - 2], pencilPoints[j - 1], pencilPoints[j], pencilPoints[j + 1], pencilPoints[j + 2], pencilPoints[j + 3], pencilPoints[j + 4], pencilPoints[j + 5]]
+            if(isBezierPoint(beizerPoints, eraserPoints, thickness))
+              return 0;
+            j += 6;
             break;
         }
       }
@@ -333,6 +338,25 @@ isRectPoint = (rectPoint, point) => {
   if(rectPoint[0] <= point[0] &&  point[0] <= rectPoint[2] && rectPoint[1] <= point[1] && point[1] <= rectPoint[3])
     return 1;
   return 0;
+}
+
+function isBezierPoint(points, eraserPoints, thickness) {
+  var t = 0;
+  while(t < 1) {
+    bezierXY = getBezierXY(t, points[0], points[1], points[2], points[3], points[4], points[5], points[6], points[7]);
+    if (getDistance(eraserPoints[0], eraserPoints[1], bezierXY[0], bezierXY[1]) < thickness)
+      return 1;
+    t += 0.01;
+  }
+  return 0;
+}
+
+function getBezierXY(t, sx, sy, cp1x, cp1y, cp2x, cp2y, ex, ey) {
+  var x = Math.pow(1-t,3) * sx + 3 * t * Math.pow(1 - t, 2) * cp1x 
+  + 3 * t * t * (1 - t) * cp2x + t * t * t * ex,
+    y= Math.pow(1-t,3) * sy + 3 * t * Math.pow(1 - t, 2) * cp1y 
+  + 3 * t * t * (1 - t) * cp2y + t * t * t * ey;
+  return [x, y];
 }
 
 export default {
