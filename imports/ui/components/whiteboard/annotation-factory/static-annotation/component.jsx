@@ -10,7 +10,7 @@ export default class StaticAnnotation extends React.Component {
 
   render() {
     const annotation = StaticAnnotationService.getAnnotationById(this.props.shapeId);
-    console.log(annotation);
+    // console.log(annotation);
     const Component = this.props.drawObject;
 
     return (

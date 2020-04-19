@@ -17,14 +17,12 @@ const AnnotationGroupContainer = props => (
 export default withTracker((params) => {
   const { whiteboardId } = params;
   const annotationsInfo = AnnotationGroupService.getCurrentAnnotationsInfo(whiteboardId);
-  // console.log("annotationsInfo", annotationsInfo);
   var eraserInfo = [];
   if(annotationsInfo !== null && annotationsInfo.length > 0) {
     for(var i=0; i<annotationsInfo.length; i++) {
       eraserInfo.push(AnnotationGroupService.getAnnotationById(annotationsInfo[i]._id));
     }
   }
-  // console.log("eraserInfo", eraserInfo);
   return {
     annotationsInfo,
     eraserInfo

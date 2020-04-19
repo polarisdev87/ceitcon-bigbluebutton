@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import AnnotationHelper from '../../annotation-factory/helpers';
 
 const ANNOTATION_CONFIG = Meteor.settings.public.whiteboard.annotations;
 const DRAW_START = ANNOTATION_CONFIG.status.start;
@@ -37,6 +38,7 @@ export default class TextDrawListener extends Component {
     this.currentY = undefined;
     this.currentWidth = undefined;
     this.currentHeight = undefined;
+    this.currentTextValue = '';
 
     // current text shape status, it may change between DRAW_START, DRAW_UPDATE, DRAW_END
     this.currentStatus = '';
@@ -197,6 +199,14 @@ export default class TextDrawListener extends Component {
       isWritingText,
     } = this.state;
 
+    const {
+      actions,
+    } = this.props;
+
+    const {
+      getTransformedSvgPoint,
+    } = actions;
+
     const isLeftClick = event.button === 0;
     const isRightClick = event.button === 2;
 
@@ -204,23 +214,45 @@ export default class TextDrawListener extends Component {
       return;
     }
 
-    // if our current drawing state is not drawing the box and not writing the text
-    if (!isDrawing && !isWritingText) {
-      if (isLeftClick) {
-        window.addEventListener('mouseup', this.handleMouseUp);
-        window.addEventListener('mousemove', this.handleMouseMove, true);
+    const { clientX, clientY } = event;
 
-        const { clientX, clientY } = event;
+    if(isDrawing && isLeftClick) {
+      var textTempDiv = document.getElementById("textDrawTempDiv");      
+      var textDrawValue = this.textDrawValue.value;
+      textTempDiv.innerHTML = textDrawValue;
+      this.currentTextValue = textDrawValue;
+
+      const transformedSvgPoint = getTransformedSvgPoint(clientX, clientY);
+
+      if(transformedSvgPoint.x < this.initialX || transformedSvgPoint.x > this.initialX + textTempDiv.clientWidth || transformedSvgPoint.y < this.initialY || transformedSvgPoint.y > this.initialY + textTempDiv.clientHeight)
+      {
+        this.setState({
+          textBoxWidth: textTempDiv.clientWidth,
+          textBoxHeight: textTempDiv.clientHeight,
+        });
+        this.customDrawEndHandler(textTempDiv.clientWidth, textTempDiv.clientHeight);
+        this.sendLastMessage();
+        if (isRightClick) {
+          this.discardAnnotation();
+        }
+      }
+    }
+
+    // if our current drawing state is not drawing the box and not writing the text
+    if (!isDrawing) {
+      if (isLeftClick) {
+        // window.addEventListener('mouseup', this.handleMouseUp);
+        // window.addEventListener('mousemove', this.handleMouseMove, true);
         this.commonDrawStartHandler(clientX, clientY);
       }
 
     // second case is when a user finished writing the text and publishes the final result
     } else {
       // publishing the final shape and resetting the state
-      this.sendLastMessage();
-      if (isRightClick) {
-        this.discardAnnotation();
-      }
+      // this.sendLastMessage();
+      // if (isRightClick) {
+      //   this.discardAnnotation();
+      // }
     }
   }
 
@@ -265,13 +297,13 @@ export default class TextDrawListener extends Component {
       actions,
     } = this.props;
 
-    const {
-      isWritingText,
-    } = this.state;
+    // const {
+    //   isWritingText,
+    // } = this.state;
 
-    if (!isWritingText) {
-      return;
-    }
+    // if (!isWritingText) {
+    //   return;
+    // }
 
     const {
       getCurrentShapeId,
@@ -285,7 +317,7 @@ export default class TextDrawListener extends Component {
       this.currentHeight,
       this.currentStatus,
       getCurrentShapeId(),
-      drawSettings.textShapeValue,
+      this.currentTextValue
     );
 
     this.resetState();
@@ -313,6 +345,7 @@ export default class TextDrawListener extends Component {
     this.currentStatus = '';
     this.initialX = undefined;
     this.initialY = undefined;
+    this.currentTextValue = '';
 
     this.setState({
       isDrawing: false,
@@ -413,6 +446,59 @@ export default class TextDrawListener extends Component {
     });
   }
 
+  customDrawEndHandler(textBoxWidth, textBoxHeight) {
+    const {
+      actions,
+      slideWidth,
+      slideHeight,
+    } = this.props;
+
+    const {
+      isDrawing,
+      isWritingText,
+      textBoxX,
+      textBoxY
+    } = this.state;
+
+    // TODO - find if the size is large enough to display the text area
+    if (!isDrawing && isWritingText) {
+      return;
+    }
+
+    const {
+      generateNewShapeId,
+      getCurrentShapeId,
+      setTextShapeActiveId,
+    } = actions;
+
+    // coordinates and width/height of the textarea in percentages of the current slide
+    // saving them in the class since they will be used during all updates
+    this.currentX = (textBoxX / slideWidth) * 100;
+    this.currentY = (textBoxY / slideHeight) * 100;
+    this.currentWidth = (textBoxWidth / slideWidth) * 100;
+    this.currentHeight = (textBoxHeight / slideHeight) * 100;
+    this.currentStatus = DRAW_START;
+    this.handleDrawText(
+      { x: this.currentX, y: this.currentY },
+      this.currentWidth,
+      this.currentHeight,
+      this.currentStatus,
+      generateNewShapeId(),
+      this.currentTextValue
+    );
+
+    setTextShapeActiveId(getCurrentShapeId());
+
+    this.setState({
+      isWritingText: true,
+      isDrawing: false,
+      textBoxX: undefined,
+      textBoxY: undefined,
+      textBoxWidth: 0,
+      textBoxHeight: 0,
+    });
+  }
+
   handleDrawText(startPoint, width, height, status, id, text) {
     const {
       whiteboardId,
@@ -477,6 +563,7 @@ export default class TextDrawListener extends Component {
   render() {
     const {
       actions,
+      drawSettings
     } = this.props;
 
     const {
@@ -489,6 +576,8 @@ export default class TextDrawListener extends Component {
     } = this.state;
 
     const { contextMenuHandler } = actions;
+    const initialX = this.initialX == undefined? 0 : this.initialX;
+    const initialY = this.initialY == undefined? 0 : this.initialY;
 
     const baseName = Meteor.settings.public.app.cdn + Meteor.settings.public.app.basename;
     const textDrawStyle = {
@@ -497,6 +586,41 @@ export default class TextDrawListener extends Component {
       touchAction: 'none',
       zIndex: MAX_Z_INDEX,
       cursor: `url('${baseName}/resources/images/whiteboard-cursor/text.png'), default`,
+    };
+
+    const textDrawAreaStyle = {
+      position: 'absolute',
+      left: initialX + 'px',
+      top: initialY + 'px',
+      width: 'calc(100% - ' + initialX + 'px)',
+      height: 'calc(100% - ' + initialY + 'px)',
+      touchAction: 'none',
+      zIndex: MAX_Z_INDEX,
+      border: 'none',
+      outline: 'none',
+      padding: '0px',
+      overflow: 'hidden',
+      background: '#ffffff',
+      fontFamily: 'Arial, sans-serif',
+      color: AnnotationHelper.getFormattedColor(drawSettings.color),
+      fontSize: drawSettings.textFontSize,
+      lineHeight: 1,
+      whiteSpace: 'nowrap'
+    };
+
+    const textDrawCanvasStyle = {
+      display: 'inline-block',
+      visibility: 'hidden',
+      border: 'none',
+      outline: 'none',
+      padding: '0px',
+      overflow: 'hidden',
+      maxWidth: 'calc(100% - ' + initialX + 'px)',
+      maxHeight: 'calc(100% - ' + initialY + 'px)',
+      fontFamily: 'Arial, sans-serif',
+      fontSize: drawSettings.textFontSize,
+      lineHeight: 1,
+      whiteSpace: 'pre-wrap'
     };
 
     return (
@@ -508,28 +632,11 @@ export default class TextDrawListener extends Component {
         onContextMenu={contextMenuHandler}
       >
         {isDrawing
-          ? (
-            <svg
-              width="100%"
-              height="100%"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {!isWritingText
-                ? (
-                  <rect
-                    x={textBoxX}
-                    y={textBoxY}
-                    fill="none"
-                    stroke="black"
-                    strokeWidth="1"
-                    width={textBoxWidth}
-                    height={textBoxHeight}
-                  />
-                )
-                : null }
-            </svg>
+            ? (
+              <textarea autofocus="true" id="textDrawArea" spellCheck="false" style={textDrawAreaStyle} ref={e => this.textDrawValue = e} />
           )
           : null }
+          <div id="textDrawTempDiv" style={textDrawCanvasStyle}></div>
       </div>
     );
   }

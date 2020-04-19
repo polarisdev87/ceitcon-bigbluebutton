@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import PropTypes, { nominalTypeHack } from 'prop-types';
 import 'fabric-webpack';
 import ReactiveAnnotationContainer from './reactive-annotation/container';
 import AnnotationService from './service';

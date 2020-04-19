@@ -226,13 +226,10 @@ const drawShape = (canvas, context, type, annotationInfo, slideWidth, slideHeigh
             // context.fill();
             break;
         case "text":
-            // const textbox = new fabric.IText('Tap and Type', { 
-            //     fontFamily: 'arial black',
-            //     left: Math.floor(annotationInfo.x / 100 * slideWidth), 
-            //     top: Math.floor(annotationInfo.y / 100 * slideHeight) ,
-            // });
-            // canvas.add(textbox);
-            break;
+          context.fillStyle =  getFormattedColor(annotationInfo.fontColor);
+          context.font =  annotationInfo.fontSize + 'px ' + 'Arial, sans-serif';
+          context.fillText(annotationInfo.text, (annotationInfo.x / 100) * slideWidth, (annotationInfo.y / 100) * slideHeight);
+          break;
         default:
             break;
     }
