@@ -228,7 +228,12 @@ const drawShape = (canvas, context, type, annotationInfo, slideWidth, slideHeigh
         case "text":
           context.fillStyle =  getFormattedColor(annotationInfo.fontColor);
           context.font =  annotationInfo.fontSize + 'px ' + 'Arial, sans-serif';
-          context.fillText(annotationInfo.text, (annotationInfo.x / 100) * slideWidth, (annotationInfo.y / 100) * slideHeight);
+          var textX = (annotationInfo.x / 100) * slideWidth,
+            textY = (annotationInfo.y / 100) * slideHeight;
+          var lineHeight = annotationInfo.fontSize;
+          var lines = annotationInfo.text.split('\n');
+          for (i = 0; i < lines.length; i ++)
+            context.fillText(lines[i], textX, textY + (i * lineHeight));
           break;
         default:
             break;

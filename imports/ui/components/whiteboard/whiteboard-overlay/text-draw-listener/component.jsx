@@ -84,6 +84,16 @@ export default class TextDrawListener extends Component {
       actions,
     } = this.props;
 
+    const {
+      isDrawing
+    } = this.state;
+
+    if(isDrawing) {
+      setTimeout(() => {
+        document.getElementById("textDrawArea").focus();
+      }, 100);        
+    }
+
     const prevDrawsettings = prevProps.drawSettings;
     const prevTextShapeValue = prevProps.drawSettings.textShapeValue;
 
