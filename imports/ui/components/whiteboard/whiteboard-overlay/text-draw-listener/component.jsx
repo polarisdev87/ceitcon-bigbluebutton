@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import AnnotationHelper from '../../annotation-factory/helpers';
-
+import AnnotationService from '../../annotation-factory/service';
+import AnnotationGroupService from '../../annotation-group/service';
 const ANNOTATION_CONFIG = Meteor.settings.public.whiteboard.annotations;
 const DRAW_START = ANNOTATION_CONFIG.status.start;
 const DRAW_UPDATE = ANNOTATION_CONFIG.status.update;
@@ -42,6 +43,7 @@ export default class TextDrawListener extends Component {
 
     // current text shape status, it may change between DRAW_START, DRAW_UPDATE, DRAW_END
     this.currentStatus = '';
+    this.annotationArray = [];
 
     // Mobile Firefox has a bug where e.preventDefault on touchstart doesn't prevent
     // onmousedown from triggering right after. Thus we have to track it manually.
@@ -64,14 +66,42 @@ export default class TextDrawListener extends Component {
 
   componentDidMount() {
     window.addEventListener('beforeunload', this.sendLastMessage);
+
+    const { whiteboardId } = this.props;
+    const annotationsInfo = AnnotationGroupService.getCurrentAnnotationsInfo(whiteboardId);
+    this.annotationArray = [];
+    annotationsInfo.map((annotationDef, index) => {
+      if(annotationDef.annotationType == "text") {
+        const annotation = AnnotationService.getAnnotationById(annotationDef._id);
+        if(annotation.status == "DRAW_END") {
+          this.annotationArray.push(annotation);
+        }
+      }
+    });
+    console.log(this.annotationArray);
   }
 
 
   // If the activeId suddenly became empty - this means the shape was deleted
   // While the user was drawing it. So we are resetting the state.
   componentWillReceiveProps(nextProps) {
-    const { drawSettings } = this.props;
+    const { drawSettings, whiteboardId } = this.props;
     const nextDrawsettings = nextProps.drawSettings;
+
+    // const { whiteboardId } = this.props;
+    // const annotationsInfo = AnnotationGroupService.getCurrentAnnotationsInfo(whiteboardId);
+    // console.log(annotationsInfo);
+    // var { annotationArray } = this.state;
+    // annotationArray = [];
+    // annotationsInfo.map((annotationDef, index) => {
+    //   if(annotationDef.annotationType == "text") {
+    //     const annotation = AnnotationService.getAnnotationById(annotationDef._id);
+    //     if(annotation.status == "DRAW_END") {
+    //       annotationArray.push(annotation);
+    //     }
+    //   }
+    // });
+    // this.setState({annotationArray});
 
     if (drawSettings.textShapeActiveId !== '' && nextDrawsettings.textShapeActiveId === '') {
       this.resetState();
@@ -268,8 +298,37 @@ export default class TextDrawListener extends Component {
 
   // main mouse move handler
   handleMouseMove(event) {
+
     const { clientX, clientY } = event;
-    this.commonDrawMoveHandler(clientX, clientY);
+    const {
+      slideWidth,
+      slideHeight,
+    } = this.props;
+    const {
+      actions,
+    } = this.props;
+
+    const {
+      getTransformedSvgPoint,
+    } = actions;
+
+    var transformedSvgPoint = getTransformedSvgPoint(clientX, clientY);
+    transformedSvgPoint.x = transformedSvgPoint.x / slideWidth * 100;
+    transformedSvgPoint.y = transformedSvgPoint.y / slideHeight * 100;
+    var outerDiv = document.getElementById("textDrawOuterDiv");
+    outerDiv.style.display = 'none';
+
+    this.annotationArray.map((annotation, index) => {
+      if(annotation.annotationInfo.x <= transformedSvgPoint.x &&  transformedSvgPoint.x <= annotation.annotationInfo.x + annotation.annotationInfo.textBoxWidth && annotation.annotationInfo.y <= transformedSvgPoint.y &&  transformedSvgPoint.y <= annotation.annotationInfo.y + annotation.annotationInfo.textBoxHeight) {
+        outerDiv.style.display = 'inline-block';
+        outerDiv.style.left = annotation.annotationInfo.x + '%';
+        outerDiv.style.top = annotation.annotationInfo.y + '%';
+        outerDiv.style.width = annotation.annotationInfo.textBoxWidth + '%';
+        outerDiv.style.height = annotation.annotationInfo.textBoxHeight + '%';
+        return;
+      }
+    });
+    // this.commonDrawMoveHandler(clientX, clientY);
   }
 
   // main mouse up handler
@@ -339,7 +398,7 @@ export default class TextDrawListener extends Component {
     } = this.props;
     // resetting the current drawing state
     window.removeEventListener('mouseup', this.handleMouseUp);
-    window.removeEventListener('mousemove', this.handleMouseMove, true);
+    // window.removeEventListener('mousemove', this.handleMouseMove, true);
     // touchend, touchmove and touchcancel are removed on devices
     window.removeEventListener('touchend', this.handleTouchEnd, { passive: false });
     window.removeEventListener('touchmove', this.handleTouchMove, { passive: false });
@@ -610,7 +669,7 @@ export default class TextDrawListener extends Component {
       outline: 'none',
       padding: '0px',
       overflow: 'hidden',
-      background: '#ffffff',
+      background: 'transparent',
       fontFamily: 'Arial, sans-serif',
       color: AnnotationHelper.getFormattedColor(drawSettings.color),
       fontSize: drawSettings.textFontSize,
@@ -633,11 +692,20 @@ export default class TextDrawListener extends Component {
       whiteSpace: 'pre-wrap'
     };
 
+    const textDrawOuterStyle = {
+      display: 'none',
+      position: 'absolute',
+      zIndex: MAX_Z_INDEX - 1,
+      border: '3px dashed green',
+      marginTop: "-5px"
+    };
+
     return (
       <div
         role="presentation"
         style={textDrawStyle}
         onMouseDown={this.handleMouseDown}
+        onMouseMove={this.handleMouseMove}
         onTouchStart={this.handleTouchStart}
         onContextMenu={contextMenuHandler}
       >
@@ -647,6 +715,7 @@ export default class TextDrawListener extends Component {
           )
           : null }
           <div id="textDrawTempDiv" style={textDrawCanvasStyle}></div>
+          <div id="textDrawOuterDiv" style={textDrawOuterStyle}></div>
       </div>
     );
   }

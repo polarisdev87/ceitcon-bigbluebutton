@@ -228,8 +228,9 @@ const drawShape = (canvas, context, type, annotationInfo, slideWidth, slideHeigh
         case "text":
           context.fillStyle =  getFormattedColor(annotationInfo.fontColor);
           context.font =  annotationInfo.fontSize + 'px ' + 'Arial, sans-serif';
-          var textX = (annotationInfo.x / 100) * slideWidth,
-            textY = (annotationInfo.y / 100) * slideHeight;
+          context.textBaseline = "hanging";
+          var textX = (annotationInfo.x / 100.0) * slideWidth,
+            textY = (annotationInfo.y / 100.0) * slideHeight;
           var lineHeight = annotationInfo.fontSize;
           var lines = annotationInfo.text.split('\n');
           for (i = 0; i < lines.length; i ++)
@@ -311,6 +312,11 @@ const isDeletedAnnotation = (annotationEraser, annotation, slideWidth, slideHeig
         }
       }
       break;  
+    case "text":
+      var textRect = [annotation.annotationInfo.x, annotation.annotationInfo.y, annotation.annotationInfo.x + annotation.annotationInfo.textBoxWidth, annotation.annotationInfo.y + annotation.annotationInfo.textBoxHeight];
+      if(isRectPoint(textRect, eraserPoints))
+        return 0;
+      break;
   }
   return 1;
 }
