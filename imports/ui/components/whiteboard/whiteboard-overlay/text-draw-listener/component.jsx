@@ -27,6 +27,7 @@ export default class TextDrawListener extends Component {
 
       // to track the status of writing a text shape after the textarea has been drawn
       isWritingText: false,
+      isUpdatedText: false,
     };
 
     // initial mousedown coordinates
@@ -39,11 +40,18 @@ export default class TextDrawListener extends Component {
     this.currentY = undefined;
     this.currentWidth = undefined;
     this.currentHeight = undefined;
+
+    //text annotation array to check edit, and highlight text annotations.
+    this.annotationArray = [];
+    //current textarea text to add new text annotation.
     this.currentTextValue = '';
+    //
+    this.updateTextValue = '';
+    this.currentHighLightID = '';
 
     // current text shape status, it may change between DRAW_START, DRAW_UPDATE, DRAW_END
     this.currentStatus = '';
-    this.annotationArray = [];
+    
 
     // Mobile Firefox has a bug where e.preventDefault on touchstart doesn't prevent
     // onmousedown from triggering right after. Thus we have to track it manually.
@@ -67,41 +75,68 @@ export default class TextDrawListener extends Component {
   componentDidMount() {
     window.addEventListener('beforeunload', this.sendLastMessage);
 
-    const { whiteboardId } = this.props;
-    const annotationsInfo = AnnotationGroupService.getCurrentAnnotationsInfo(whiteboardId);
-    this.annotationArray = [];
-    annotationsInfo.map((annotationDef, index) => {
-      if(annotationDef.annotationType == "text") {
-        const annotation = AnnotationService.getAnnotationById(annotationDef._id);
-        if(annotation.status == "DRAW_END") {
-          this.annotationArray.push(annotation);
-        }
-      }
-    });
-    console.log(this.annotationArray);
+    // const { whiteboardId, slideWidth, slideHeight} = this.props;
+    // var annotationFullArray = [];
+
+    // const staticItems = AnnotationGroupService.getCurrentAnnotationsInfo(whiteboardId);
+    // staticItems.map((annotationDef, index) => {
+    //   const annotation = AnnotationService.getAnnotationById(annotationDef._id);
+    //   annotationFullArray.push(annotation);
+    // });
+
+    // var annotationVisible = new Array(annotationFullArray.length).fill(1);
+    // annotationFullArray.map((annotation, index) => {
+    //   if(annotation.annotationType == "elementEraser") { 
+    //     for(let i = 0; i < index; i ++) {
+    //       if(annotationFullArray[i].annotationType == "text" && annotationVisible[i]) {
+    //         annotationVisible[i] = AnnotationHelper.isDeletedAnnotation(annotation, annotationFullArray[i], slideWidth, slideHeight);
+    //       }
+    //     }
+    //   }
+    // });
+
+    // this.annotationArray = [];
+    // annotationFullArray.map((annotation, index) => {
+    //   if(annotation.annotationType == "text" && annotationVisible[index]) {
+    //     this.annotationArray.push(annotation);
+    //   }
+    // });
   }
 
 
   // If the activeId suddenly became empty - this means the shape was deleted
   // While the user was drawing it. So we are resetting the state.
   componentWillReceiveProps(nextProps) {
-    const { drawSettings, whiteboardId } = this.props;
+    const { drawSettings, whiteboardId, slideWidth, slideHeight} = this.props;
     const nextDrawsettings = nextProps.drawSettings;
 
-    // const { whiteboardId } = this.props;
-    // const annotationsInfo = AnnotationGroupService.getCurrentAnnotationsInfo(whiteboardId);
-    // console.log(annotationsInfo);
-    // var { annotationArray } = this.state;
-    // annotationArray = [];
-    // annotationsInfo.map((annotationDef, index) => {
-    //   if(annotationDef.annotationType == "text") {
-    //     const annotation = AnnotationService.getAnnotationById(annotationDef._id);
-    //     if(annotation.status == "DRAW_END") {
-    //       annotationArray.push(annotation);
-    //     }
-    //   }
-    // });
-    // this.setState({annotationArray});
+    var annotationFullArray = [];
+
+    const staticItems = AnnotationGroupService.getCurrentAnnotationsInfo(whiteboardId);
+    staticItems.map((annotationDef, index) => {
+      const annotation = AnnotationService.getAnnotationById(annotationDef._id);
+      annotationFullArray.push(annotation);
+    });
+
+    console.log("componentWillReceiveProps", annotationFullArray);
+
+    var annotationVisible = new Array(annotationFullArray.length).fill(1);
+    annotationFullArray.map((annotation, index) => {
+      if(annotation.annotationType == "elementEraser") { 
+        for(let i = 0; i < index; i ++) {
+          if(annotationFullArray[i].annotationType == "text" && annotationVisible[i]) {
+            annotationVisible[i] = AnnotationHelper.isDeletedAnnotation(annotation, annotationFullArray[i], slideWidth, slideHeight);
+          }
+        }
+      }
+    });
+
+    this.annotationArray = [];
+    annotationFullArray.map((annotation, index) => {
+      if(annotation.annotationType == "text" && annotationVisible[index]) {
+        this.annotationArray.push(annotation);
+      }
+    });
 
     if (drawSettings.textShapeActiveId !== '' && nextDrawsettings.textShapeActiveId === '') {
       this.resetState();
@@ -118,6 +153,7 @@ export default class TextDrawListener extends Component {
       isDrawing
     } = this.state;
 
+    //set focus to textarea
     if(isDrawing) {
       setTimeout(() => {
         document.getElementById("textDrawArea").focus();
@@ -240,11 +276,14 @@ export default class TextDrawListener extends Component {
     } = this.state;
 
     const {
+      slideWidth,
+      slideHeight,
       actions,
     } = this.props;
 
     const {
       getTransformedSvgPoint,
+      generateNewShapeId
     } = actions;
 
     const isLeftClick = event.button === 0;
@@ -256,6 +295,7 @@ export default class TextDrawListener extends Component {
 
     const { clientX, clientY } = event;
 
+    // escape from editing status
     if(isDrawing && isLeftClick) {
       var textTempDiv = document.getElementById("textDrawTempDiv");      
       var textDrawValue = this.textDrawValue.value;
@@ -269,6 +309,7 @@ export default class TextDrawListener extends Component {
         this.setState({
           textBoxWidth: textTempDiv.clientWidth,
           textBoxHeight: textTempDiv.clientHeight,
+          isUpdatedText: false
         });
         this.customDrawEndHandler(textTempDiv.clientWidth, textTempDiv.clientHeight);
         this.sendLastMessage();
@@ -283,7 +324,35 @@ export default class TextDrawListener extends Component {
       if (isLeftClick) {
         // window.addEventListener('mouseup', this.handleMouseUp);
         // window.addEventListener('mousemove', this.handleMouseMove, true);
-        this.commonDrawStartHandler(clientX, clientY);
+        if(this.currentHighLightID == '') {
+          this.commonDrawStartHandler(clientX, clientY);
+        } 
+        else {
+          this.annotationArray.map((annotation, index) => {
+            if(annotation._id == this.currentHighLightID) {
+              //remove highlight
+              var outerDiv = document.getElementById("textDrawOuterDiv");
+              outerDiv.style.display = 'none';
+              this.currentHighLightID = '';
+              //open textarea with previous text
+              var pixelX = annotation.annotationInfo.x / 100 * slideWidth;
+              var pixelY = annotation.annotationInfo.y / 100 * slideHeight;
+              this.initialX = pixelX;
+              this.initialY = pixelY;
+              this.updateTextValue = annotation.annotationInfo.text;
+
+              const removedPoint = [annotation.annotationInfo.x + 0.005, annotation.annotationInfo.y + 0.005];
+              this.addTextElementEraser(removedPoint, DRAW_END, generateNewShapeId());
+
+              this.setState({
+                textBoxX: pixelX,
+                textBoxY: pixelY,
+                isDrawing: true,
+                isUpdatedText: true
+              });
+            }
+          });
+        }
       }
 
     // second case is when a user finished writing the text and publishes the final result
@@ -303,8 +372,6 @@ export default class TextDrawListener extends Component {
     const {
       slideWidth,
       slideHeight,
-    } = this.props;
-    const {
       actions,
     } = this.props;
 
@@ -312,11 +379,20 @@ export default class TextDrawListener extends Component {
       getTransformedSvgPoint,
     } = actions;
 
+    const {
+      isDrawing,
+    } = this.state;
+
+    if(isDrawing) {
+      return;
+    }
+
     var transformedSvgPoint = getTransformedSvgPoint(clientX, clientY);
     transformedSvgPoint.x = transformedSvgPoint.x / slideWidth * 100;
     transformedSvgPoint.y = transformedSvgPoint.y / slideHeight * 100;
     var outerDiv = document.getElementById("textDrawOuterDiv");
     outerDiv.style.display = 'none';
+    this.currentHighLightID = '';
 
     this.annotationArray.map((annotation, index) => {
       if(annotation.annotationInfo.x <= transformedSvgPoint.x &&  transformedSvgPoint.x <= annotation.annotationInfo.x + annotation.annotationInfo.textBoxWidth && annotation.annotationInfo.y <= transformedSvgPoint.y &&  transformedSvgPoint.y <= annotation.annotationInfo.y + annotation.annotationInfo.textBoxHeight) {
@@ -325,6 +401,7 @@ export default class TextDrawListener extends Component {
         outerDiv.style.top = annotation.annotationInfo.y + '%';
         outerDiv.style.width = annotation.annotationInfo.textBoxWidth + '%';
         outerDiv.style.height = annotation.annotationInfo.textBoxHeight + '%';
+        this.currentHighLightID = annotation._id;
         return;
       }
     });
@@ -336,6 +413,46 @@ export default class TextDrawListener extends Component {
     window.removeEventListener('mouseup', this.handleMouseUp);
     window.removeEventListener('mousemove', this.handleMouseMove, true);
     this.commonDrawEndHandler();
+  }
+
+  addTextElementEraser(points, status, id) {
+    console.log("addTextElementEraser");
+    const {
+      whiteboardId,
+      userId,
+      actions,
+      drawSettings,
+    } = this.props;
+
+    const {
+      normalizeThickness,
+      sendAnnotation,
+    } = actions;
+
+    const {
+      thickness,
+      color,
+    } = drawSettings;
+
+    const annotation = {
+      id,
+      status,
+      annotationType: 'elementEraser',
+      annotationInfo: {
+        color,
+        thickness: normalizeThickness(thickness),
+        points,
+        id,
+        whiteboardId,
+        status,
+        type: 'elementEraser',
+      },
+      wbId: whiteboardId,
+      userId,
+      position: 0,
+    };
+
+    sendAnnotation(annotation, whiteboardId);
   }
 
   commonDrawStartHandler(clientX, clientY) {
@@ -414,7 +531,10 @@ export default class TextDrawListener extends Component {
     this.currentStatus = '';
     this.initialX = undefined;
     this.initialY = undefined;
+
     this.currentTextValue = '';
+    this.updateTextValue = '';
+    this.currentHighLightID = '';
 
     this.setState({
       isDrawing: false,
@@ -423,6 +543,7 @@ export default class TextDrawListener extends Component {
       textBoxY: undefined,
       textBoxWidth: 0,
       textBoxHeight: 0,
+      isUpdatedText: false
     });
   }
 
@@ -502,6 +623,8 @@ export default class TextDrawListener extends Component {
       generateNewShapeId(),
       '',
     );
+    this.updateTextValue = '';
+    this.currentHighLightID = '';
 
     setTextShapeActiveId(getCurrentShapeId());
 
@@ -512,6 +635,7 @@ export default class TextDrawListener extends Component {
       textBoxY: undefined,
       textBoxWidth: 0,
       textBoxHeight: 0,
+      isUpdatedText: false
     });
   }
 
@@ -558,6 +682,9 @@ export default class TextDrawListener extends Component {
 
     setTextShapeActiveId(getCurrentShapeId());
 
+    this.updateTextValue = '';
+    this.currentHighLightID = '';
+
     this.setState({
       isWritingText: true,
       isDrawing: false,
@@ -565,6 +692,7 @@ export default class TextDrawListener extends Component {
       textBoxY: undefined,
       textBoxWidth: 0,
       textBoxHeight: 0,
+      isUpdatedText: false
     });
   }
 
@@ -610,6 +738,10 @@ export default class TextDrawListener extends Component {
       position: 0,
     };
 
+    if(annotation.status == "DRAW_END") {
+      this.annotationArray.push(annotation);
+    }
+
     sendAnnotation(annotation, whiteboardId);
   }
 
@@ -642,6 +774,7 @@ export default class TextDrawListener extends Component {
       textBoxHeight,
       isWritingText,
       isDrawing,
+      isUpdatedText
     } = this.state;
 
     const { contextMenuHandler } = actions;
@@ -697,7 +830,7 @@ export default class TextDrawListener extends Component {
       position: 'absolute',
       zIndex: MAX_Z_INDEX - 1,
       border: '3px dashed green',
-      marginTop: "-5px"
+      marginTop: '-5px',
     };
 
     return (
@@ -711,7 +844,7 @@ export default class TextDrawListener extends Component {
       >
         {isDrawing
             ? (
-              <textarea autofocus="true" id="textDrawArea" spellCheck="false" style={textDrawAreaStyle} ref={e => this.textDrawValue = e} />
+              <textarea autofocus="true" id="textDrawArea" spellCheck="false" style={textDrawAreaStyle} ref={e => this.textDrawValue = e} defaultValue={isUpdatedText ? this.updateTextValue : ''}/>
           )
           : null }
           <div id="textDrawTempDiv" style={textDrawCanvasStyle}></div>

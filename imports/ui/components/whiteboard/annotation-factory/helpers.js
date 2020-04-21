@@ -283,6 +283,8 @@ const isDeletedAnnotation = (annotationEraser, annotation, slideWidth, slideHeig
         return 0;
       break;
     case "pencil":
+      if(annotation.annotationInfo.status == 'DRAW_START')
+        break;
       var pencilPoints = annotation.annotationInfo.points,
         pencilCommands = annotation.annotationInfo.commands,
         thickness = annotation.annotationInfo.thickness;
