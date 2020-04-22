@@ -156,7 +156,9 @@ export default class TextDrawListener extends Component {
     //set focus to textarea
     if(isDrawing) {
       setTimeout(() => {
-        document.getElementById("textDrawArea").focus();
+        var element = document.getElementById("textDrawArea");
+        element.focus();
+        element.setSelectionRange(element.value.length,element.value.length);
       }, 100);        
     }
 
