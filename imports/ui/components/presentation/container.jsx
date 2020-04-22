@@ -22,7 +22,6 @@ export default withTracker(({ podId }) => {
       id: slideId,
     } = currentSlide;
     slidePosition = PresentationAreaService.getSlidePosition(podId, presentationId, slideId);
-    console.log(slidePosition);
   }
   return {
     currentSlide,

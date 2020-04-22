@@ -39,13 +39,15 @@ export default class AnnotationFactory extends Component {
     var annotationArray = [];
     var annotationVisible = new Array(staticItems.length).fill(1);
 
+    console.log("factory staticitems", staticItems);
+
     if(staticItems) {
       staticItems.map((annotationDef, index) => {
         const annotation = AnnotationService.getAnnotationById(annotationDef._id);
         annotationArray.push(annotation);
       });
 
-      // console.log("annotationArray", annotationArray);
+      console.log("factory annotationArray", annotationArray);
 
       annotationArray.map((annotation, index) => {
         if(annotation.annotationType == "elementEraser") { 

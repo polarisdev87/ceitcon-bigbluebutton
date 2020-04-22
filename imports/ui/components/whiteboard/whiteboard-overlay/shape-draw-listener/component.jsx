@@ -56,6 +56,72 @@ export default class ShapeDrawListener extends Component {
     this.sendLastMessage();
   }
 
+  handleTouchStart(event) {
+    event.preventDefault();
+
+    if (!this.isDrawing) {
+      window.addEventListener('touchend', this.handleTouchEnd, { passive: false });
+      window.addEventListener('touchmove', this.handleTouchMove, { passive: false });
+      window.addEventListener('touchcancel', this.handleTouchCancel, true);
+
+      const { clientX, clientY } = event.changedTouches[0];
+      this.commonDrawStartHandler(clientX, clientY);
+
+    // if you switch to a different window using Alt+Tab while mouse is down and release it
+    // it wont catch mouseUp and will keep tracking the movements. Thus we need this check.
+    } else {
+      this.sendLastMessage();
+    }
+  }
+
+  handleTouchMove(event) {
+    event.preventDefault();
+    const { clientX, clientY } = event.changedTouches[0];
+    this.commonDrawMoveHandler(clientX, clientY);
+  }
+
+  handleTouchEnd() {
+    this.sendLastMessage();
+  }
+
+  handleTouchCancel() {
+    this.sendLastMessage();
+  }
+
+  // main mouse down handler
+  handleMouseDown(event) {
+    const isLeftClick = event.button === 0;
+    const isRightClick = event.button === 2;
+
+    if (!this.isDrawing) {
+      if (isLeftClick) {
+        window.addEventListener('mouseup', this.handleMouseUp);
+        window.addEventListener('mousemove', this.handleMouseMove, true);
+
+        const { clientX, clientY } = event;
+        this.commonDrawStartHandler(clientX, clientY);
+      }
+
+    // if you switch to a different window using Alt+Tab while mouse is down and release it
+    // it wont catch mouseUp and will keep tracking the movements. Thus we need this check.
+    } else if (isRightClick) {
+      // this.isDrawing = false;
+      this.sendLastMessage();
+      this.discardAnnotation();
+    }
+  }
+
+  // main mouse move handler
+  handleMouseMove(event) {
+    const { clientX, clientY } = event;
+    this.commonDrawMoveHandler(clientX, clientY);
+  }
+
+  // main mouse up handler
+  handleMouseUp() {
+    this.sendLastMessage();
+  }
+
   commonDrawStartHandler(clientX, clientY) {
     this.isDrawing = true;
 
@@ -123,72 +189,6 @@ export default class ShapeDrawListener extends Component {
     // saving the last sent coordinate
     this.currentCoordinate = transformedSvgPoint;
     this.sendCoordinates();
-  }
-
-  handleTouchStart(event) {
-    event.preventDefault();
-
-    if (!this.isDrawing) {
-      window.addEventListener('touchend', this.handleTouchEnd, { passive: false });
-      window.addEventListener('touchmove', this.handleTouchMove, { passive: false });
-      window.addEventListener('touchcancel', this.handleTouchCancel, true);
-
-      const { clientX, clientY } = event.changedTouches[0];
-      this.commonDrawStartHandler(clientX, clientY);
-
-    // if you switch to a different window using Alt+Tab while mouse is down and release it
-    // it wont catch mouseUp and will keep tracking the movements. Thus we need this check.
-    } else {
-      this.sendLastMessage();
-    }
-  }
-
-  handleTouchMove(event) {
-    event.preventDefault();
-    const { clientX, clientY } = event.changedTouches[0];
-    this.commonDrawMoveHandler(clientX, clientY);
-  }
-
-  handleTouchEnd() {
-    this.sendLastMessage();
-  }
-
-  handleTouchCancel() {
-    this.sendLastMessage();
-  }
-
-  // main mouse down handler
-  handleMouseDown(event) {
-    const isLeftClick = event.button === 0;
-    const isRightClick = event.button === 2;
-
-    if (!this.isDrawing) {
-      if (isLeftClick) {
-        window.addEventListener('mouseup', this.handleMouseUp);
-        window.addEventListener('mousemove', this.handleMouseMove, true);
-
-        const { clientX, clientY } = event;
-        this.commonDrawStartHandler(clientX, clientY);
-      }
-
-    // if you switch to a different window using Alt+Tab while mouse is down and release it
-    // it wont catch mouseUp and will keep tracking the movements. Thus we need this check.
-    } else if (isRightClick) {
-      // this.isDrawing = false;
-      this.sendLastMessage();
-      this.discardAnnotation();
-    }
-  }
-
-  // main mouse move handler
-  handleMouseMove(event) {
-    const { clientX, clientY } = event;
-    this.commonDrawMoveHandler(clientX, clientY);
-  }
-
-  // main mouse up handler
-  handleMouseUp() {
-    this.sendLastMessage();
   }
 
   sendCoordinates() {
