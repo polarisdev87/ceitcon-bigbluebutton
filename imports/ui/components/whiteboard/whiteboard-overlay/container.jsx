@@ -20,6 +20,7 @@ export default withTracker(() => {
     undoAnnotation: WhiteboardToolbarService.undoAnnotation,
     contextMenuHandler: WhiteboardOverlayService.contextMenuHandler,
     sendAnnotation: WhiteboardOverlayService.sendAnnotation,
+    removeRelatedAnnotations: WhiteboardOverlayService.removeRelatedAnnotations,
     addAnnotationToDiscardedList: WhiteboardOverlayService.addAnnotationToDiscardedList,
     setTextShapeActiveId: WhiteboardOverlayService.setTextShapeActiveId,
     resetTextShapeSession: WhiteboardOverlayService.resetTextShapeSession,

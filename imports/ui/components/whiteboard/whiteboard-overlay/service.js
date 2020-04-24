@@ -1,6 +1,6 @@
 import Storage from '/imports/ui/services/storage/session';
 import Auth from '/imports/ui/services/auth';
-import { sendAnnotation, addAnnotationToDiscardedList } from '/imports/ui/components/whiteboard/service';
+import { sendAnnotation, addAnnotationToDiscardedList, removeRelatedAnnotations} from '/imports/ui/components/whiteboard/service';
 import { publishCursorUpdate } from '/imports/ui/components/cursor/service';
 
 const DRAW_SETTINGS = 'drawSettings';
@@ -57,6 +57,7 @@ const updateCursor = (payload) => {
 export default {
   addAnnotationToDiscardedList,
   sendAnnotation,
+  removeRelatedAnnotations,
   getWhiteboardToolbarValues,
   setTextShapeActiveId,
   resetTextShapeSession,

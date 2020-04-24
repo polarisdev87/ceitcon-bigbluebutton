@@ -15,6 +15,10 @@ const discardedList = [];
 
 let annotationsStreamListener = null;
 
+export function removeRelatedAnnotations(annotationId) {
+  makeCall('removeRelatedAnnotations', annotationId); 
+}
+
 export function addAnnotationToDiscardedList(annotation) {
   if (!discardedList.includes(annotation)) discardedList.push(annotation);
 }

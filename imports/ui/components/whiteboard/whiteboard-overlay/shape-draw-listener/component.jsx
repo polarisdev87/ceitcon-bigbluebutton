@@ -274,6 +274,12 @@ export default class ShapeDrawListener extends Component {
       x: undefined,
       y: undefined,
     };
+    const {actions} = this.props;
+    const {
+      removeRelatedAnnotations,
+      getCurrentShapeId,
+    } = actions;
+    removeRelatedAnnotations(getCurrentShapeId());
   }
 
   // since Rectangle / Triangle / Ellipse / Line have the same coordinate structure
