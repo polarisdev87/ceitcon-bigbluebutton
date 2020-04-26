@@ -63,7 +63,7 @@ export default class ElementEraserListener extends Component {
 
     // sending the first message
     const _points = [transformedSvgPoint.x, transformedSvgPoint.y];
-    this.handleDrawPencil(_points, DRAW_START, generateNewShapeId());
+    this.handleDrawPencil(_points, DRAW_END, generateNewShapeId());
   }
 
   handleTouchStart(event) {
@@ -182,12 +182,12 @@ export default class ElementEraserListener extends Component {
 
       const { getCurrentShapeId } = actions;
 
-      this.handleDrawPencil(
-        this.points,
-        DRAW_END,
-        getCurrentShapeId(),
-        [Math.round(physicalSlideWidth), Math.round(physicalSlideHeight)],
-      );
+      // this.handleDrawPencil(
+      //   this.points,
+      //   DRAW_END,
+      //   getCurrentShapeId(),
+      //   [Math.round(physicalSlideWidth), Math.round(physicalSlideHeight)],
+      // );
       this.resetState();
     }
   }
