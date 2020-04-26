@@ -47,7 +47,7 @@ export default class AnnotationFactory extends Component {
         annotationArray.push(annotation);
       });
 
-      // console.log("factory annotationArray", annotationArray);
+      console.log("factory annotationArray", annotationArray);
 
       annotationArray.map((annotation, index) => {
         if(annotation.annotationType == "elementEraser") { 
