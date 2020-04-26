@@ -5,6 +5,6 @@ const DRAW_START = ANNOTATION_CONFIG.status.start;
 const DRAW_END = ANNOTATION_CONFIG.status.end;
 
 export default function removeRelatedAnnotations(annotationId) {
-    Annotations.remove({id: annotationId, status: {$ne: DRAW_END}});
-  }
+  Annotations.remove({id: annotationId, status: {$ne: DRAW_END}});
+}
   
