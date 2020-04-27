@@ -42,20 +42,9 @@ function handleTextUpdate(meetingId, whiteboardId, userId, annotation) {
     id, status, annotationType, annotationInfo, wbId, position,
   } = annotation;
 
-  const { textBoxWidth, textBoxHeight } = annotationInfo;
-  const useDefaultSize = textBoxWidth === 0 && textBoxHeight === 0;
-
-  if (useDefaultSize) {
-    annotationInfo.textBoxWidth = DEFAULT_TEXT_WIDTH;
-    annotationInfo.textBoxHeight = DEFAULT_TEXT_HEIGHT;
-
-    if (100 - annotationInfo.x < DEFAULT_TEXT_WIDTH) {
-      annotationInfo.textBoxWidth = 100 - annotationInfo.x;
-    }
-    if (100 - annotationInfo.y < DEFAULT_TEXT_HEIGHT) {
-      annotationInfo.textBoxHeight = 100 - annotationInfo.y;
-    }
-  }
+  const DRAW_START = 'DRAW_START';
+  const DRAW_UPDATE = 'DRAW_UPDATE';
+  const DRAW_END = 'DRAW_END';
 
   const selector = {
     meetingId,
@@ -65,21 +54,44 @@ function handleTextUpdate(meetingId, whiteboardId, userId, annotation) {
 
   annotationInfo.text = annotationInfo.text.replace(/[\r]/g, '\n');
 
-  const modifier = {
-    $set: {
-      whiteboardId,
-      meetingId,
-      id,
-      status,
-      annotationType,
-      annotationInfo,
-      wbId,
-    },
-    $setOnInsert: {
-      position,
-    },
-    $inc: { version: 1 },
-  };
+  let modifier;
+  switch (status) {
+    case DRAW_START:
+      modifier = {
+        $set: {
+          whiteboardId,
+          meetingId,
+          id,
+          status,
+          annotationType,
+          annotationInfo,
+          wbId,
+          version: 1,
+        },
+        $setOnInsert: {
+          position,
+        }
+      };
+      break;
+    case DRAW_UPDATE:
+      modifier = {
+        $set: {
+          status,
+          annotationInfo,
+        },
+        $inc: { version: 1 },
+      };
+      break;
+    case DRAW_END:
+      modifier = {
+        $set: {
+          status,
+          annotationInfo,
+        },
+        $inc: { version: 1 },
+      };
+      break;
+  }
 
   return { selector, modifier };
 }

@@ -43,8 +43,10 @@ export default class TextDrawListener extends Component {
 
     //text annotation array to check edit, and highlight text annotations.
     this.annotationArray = [];
-    //current textarea text to add new text annotation.
+
+    //current textarea text
     this.currentTextValue = '';
+
     this.updateTextValue = '';
     this.currentHighLightID = '';
 
@@ -250,6 +252,8 @@ export default class TextDrawListener extends Component {
     } = this.state;
 
     const {
+      slideWidth,
+      slideHeight,
       actions,
     } = this.props;
 
@@ -267,29 +271,34 @@ export default class TextDrawListener extends Component {
     const { clientX, clientY } = event;
 
     // escape from editing status
-    if(isDrawing && isLeftClick) {
-      // Set tempdiv content with current textarea text
-      var textTempDiv = document.getElementById("textDrawTempDiv");      
-      var textDrawValue = this.textDrawValue.value;
-      textTempDiv.innerHTML = textDrawValue;
-      this.currentTextValue = textDrawValue;
-      // Confirm clicked point is in text area
-      const transformedSvgPoint = getTransformedSvgPoint(clientX, clientY);
-      if(transformedSvgPoint.x < this.initialX || transformedSvgPoint.x > this.initialX + textTempDiv.clientWidth || transformedSvgPoint.y < this.initialY || transformedSvgPoint.y > this.initialY + textTempDiv.clientHeight)
+    if(isDrawing) {
+      if(isLeftClick)
       {
-        // If clicked point is not in text area
-        this.setState({
-          textBoxWidth: textTempDiv.clientWidth,
-          textBoxHeight: textTempDiv.clientHeight,
-          isUpdatedText: false
-        });
-        this.customDrawEndHandler(textTempDiv.clientWidth, textTempDiv.clientHeight);
-        return;
+        //check clicked point is text area point
+        // Set tempdiv content with current textarea text
+        var textTempDiv = document.getElementById("textDrawTempDiv");      
+        var textDrawValue = this.textDrawValue.value;
+        textTempDiv.innerHTML = textDrawValue;
+        //Store curruent text value
+        this.currentTextValue = textDrawValue;
+        // Confirm clicked point is in text area
+        const transformedSvgPoint = getTransformedSvgPoint(clientX, clientY);
+        if(transformedSvgPoint.x < this.initialX || transformedSvgPoint.x > this.initialX + textTempDiv.clientWidth || transformedSvgPoint.y < this.initialY || transformedSvgPoint.y > this.initialY + textTempDiv.clientHeight)
+        {
+          // If clicked point is not in text area
+          this.currentWidth = textTempDiv.clientWidth / slideWidth * 100;
+          this.currentHeight = textTempDiv.clientHeight / slideHeight * 100;
+          this.setState({
+            textBoxWidth: textTempDiv.clientWidth,
+            textBoxHeight: textTempDiv.clientHeight,
+            isUpdatedText: false
+          });
+          this.sendLastMessage();
+        }
       }
-    }
-
-    if (isDrawing && isRightClick) {
-      this.discardAnnotation();
+      else if(isRightClick) {
+        this.discardAnnotation();
+      }
     }
 
     // if our current drawing state is not drawing the box and not writing the text
@@ -327,15 +336,14 @@ export default class TextDrawListener extends Component {
           // });
         }
       }
-
-    // second case is when a user finished writing the text and publishes the final result
-    } else {
-      // publishing the final shape and resetting the state
-      // this.sendLastMessage();
-      // if (isRightClick) {
-      //   this.discardAnnotation();
-      // }
-    }
+    } 
+    // else {
+    //   // publishing the final shape and resetting the state
+    //   this.sendLastMessage();
+    //   if (isRightClick) {
+    //     this.discardAnnotation();
+    //   }
+    // }
   }
 
   // main mouse move handler
@@ -397,6 +405,9 @@ export default class TextDrawListener extends Component {
 
     const {
       getTransformedSvgPoint,
+      generateNewShapeId,
+      getCurrentShapeId,
+      setTextShapeActiveId,
     } = actions;
 
     // saving initial X and Y coordinates for further displaying of the textarea
@@ -407,6 +418,15 @@ export default class TextDrawListener extends Component {
     this.currentX = transformedSvgPoint.x / slideWidth * 100;
     this.currentY = transformedSvgPoint.y / slideHeight * 100;
 
+    this.currentStatus = DRAW_START;
+    this.handleDrawText(
+      {x: this.currentX, y: this.currentY},
+      0, 0,
+      this.currentStatus,
+      generateNewShapeId(),
+      ''
+    );
+    setTextShapeActiveId(getCurrentShapeId());
     this.setState({
       textBoxX: transformedSvgPoint.x,
       textBoxY: transformedSvgPoint.y,
@@ -505,50 +525,6 @@ export default class TextDrawListener extends Component {
     });
   }
   
-  // Difference between commonDrawEndHandler & customDrawEndHandler
-  // customDrawEndHandler has different parameters from commonDrawEndHandler
-  customDrawEndHandler(textBoxWidth, textBoxHeight) {
-    const {
-      actions,
-      slideWidth,
-      slideHeight,
-    } = this.props;
-
-    const {
-      isDrawing,
-      isWritingText,
-      textBoxX,
-      textBoxY
-    } = this.state;
-
-    // TODO - find if the size is large enough to display the text area
-    if (!isDrawing && isWritingText) {
-      return;
-    }
-
-    const {
-      generateNewShapeId,
-      getCurrentShapeId,
-      setTextShapeActiveId,
-    } = actions;
-
-    // coordinates and width/height of the textarea in percentages of the current slide
-    // saving them in the class since they will be used during all updates
-    this.currentWidth = (textBoxWidth / slideWidth) * 100;
-    this.currentHeight = (textBoxHeight / slideHeight) * 100;
-    this.currentStatus = DRAW_END;
-    this.handleDrawText(
-      { x: this.currentX, y: this.currentY },
-      this.currentWidth,
-      this.currentHeight,
-      this.currentStatus,
-      generateNewShapeId(),
-      this.currentTextValue
-    );
-
-    setTextShapeActiveId(getCurrentShapeId());
-  }
-
   // Add element eraser annotation for editable text
   addTextElementEraser(points, status, id) {
     console.log("addTextElementEraser");
@@ -592,38 +568,38 @@ export default class TextDrawListener extends Component {
 
   //main textare change handler
   handleTextChange(e) {
-    // const {
-    //   textBoxX,
-    //   textBoxY,
-    //   isDrawing
-    // } = this.state;
-    // const {
-    //   actions,
-    //   slideWidth,
-    //   slideHeight,
-    // } = this.props;
+    const {
+      textBoxX,
+      textBoxY,
+      isDrawing
+    } = this.state;
+    const {
+      actions,
+      slideWidth,
+      slideHeight,
+    } = this.props;
 
-    // if(!isDrawing) return;
+    if(!isDrawing) return;
 
-    // this.currentStatus = DRAW_UPDATE;
-    // const {
-    //   generateNewShapeId,
-    //   getCurrentShapeId,
-    //   setTextShapeActiveId,
-    // } = actions;
+    this.currentStatus = DRAW_UPDATE;
+    const {
+      generateNewShapeId,
+      getCurrentShapeId,
+    } = actions;
 
-    // this.currentX = (textBoxX / slideWidth) * 100;
-    // this.currentY = (textBoxY / slideHeight) * 100;
-    // this.handleDrawText(
-    //   { x: this.currentX, y: this.currentY },
-    //   0, 0,
-    //   this.currentStatus,
-    //   generateNewShapeId(),
-    //   e.target.value,
-    // );
+    this.handleDrawText(
+      { x: this.currentX, y: this.currentY },
+      0, 0,
+      this.currentStatus,
+      getCurrentShapeId(),
+      e.target.value,
+    );
   }
 
   handleDrawText(startPoint, width, height, status, id, text) {
+    // console.log("handleDrawText", startPoint, width, height, status, id, text);
+    if(startPoint.x === undefined || startPoint.y === undefined || height === undefined || status === undefined)
+      return;
     const {
       whiteboardId,
       userId,
@@ -677,14 +653,6 @@ export default class TextDrawListener extends Component {
       drawSettings,
       actions,
     } = this.props;
-
-    // const {
-    //   isWritingText,
-    // } = this.state;
-
-    // if (!isWritingText) {
-    //   return;
-    // }
 
     const {
       getCurrentShapeId,
