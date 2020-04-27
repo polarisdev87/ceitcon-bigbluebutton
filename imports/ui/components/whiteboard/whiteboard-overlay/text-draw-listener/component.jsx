@@ -86,32 +86,32 @@ export default class TextDrawListener extends Component {
     const nextDrawsettings = nextProps.drawSettings;
 
     // initialize text annotation array for highlights and editable text
-    // var annotationFullArray = [];
+    var annotationFullArray = [];
 
-    // const staticItems = AnnotationGroupService.getCurrentAnnotationsInfo(whiteboardId);
-    // staticItems.map((annotationDef, index) => {
-    //   const annotation = AnnotationService.getAnnotationById(annotationDef._id);
-    //   annotationFullArray.push(annotation);
-    // });
+    const staticItems = AnnotationGroupService.getCurrentAnnotationsInfo(whiteboardId);
+    staticItems.map((annotationDef, index) => {
+      const annotation = AnnotationService.getAnnotationById(annotationDef._id);
+      annotationFullArray.push(annotation);
+    });
 
-    // var annotationVisible = new Array(annotationFullArray.length).fill(1);
+    var annotationVisible = new Array(annotationFullArray.length).fill(1);
 
-    // annotationFullArray.map((annotation, index) => {
-    //   if(annotation.annotationType == "elementEraser") { 
-    //     for(let i = 0; i < index; i ++) {
-    //       if(annotationFullArray[i].annotationType == "text" && annotationVisible[i]) {
-    //         annotationVisible[i] = AnnotationHelper.isDeletedAnnotation(annotation, annotationFullArray[i], slideWidth, slideHeight);
-    //       }
-    //     }
-    //   }
-    // });
+    annotationFullArray.map((annotation, index) => {
+      if(annotation.annotationType == "elementEraser") { 
+        for(let i = 0; i < index; i ++) {
+          if(annotationFullArray[i].annotationType == "text" && annotationVisible[i]) {
+            annotationVisible[i] = AnnotationHelper.isDeletedAnnotation(annotation, annotationFullArray[i], slideWidth, slideHeight);
+          }
+        }
+      }
+    });
 
-    // this.annotationArray = [];
-    // annotationFullArray.map((annotation, index) => {
-    //   if(annotation.annotationType == "text" && annotationVisible[index]) {
-    //     this.annotationArray.push(annotation);
-    //   }
-    // });
+    this.annotationArray = [];
+    annotationFullArray.map((annotation, index) => {
+      if(annotation.annotationType == "text" && annotationVisible[index]) {
+        this.annotationArray.push(annotation);
+      }
+    });
 
     if (drawSettings.textShapeActiveId !== '' && nextDrawsettings.textShapeActiveId === '') {
       this.resetState();
@@ -368,24 +368,25 @@ export default class TextDrawListener extends Component {
       return;
     }
 
-    // var transformedSvgPoint = getTransformedSvgPoint(clientX, clientY);
-    // transformedSvgPoint.x = transformedSvgPoint.x / slideWidth * 100;
-    // transformedSvgPoint.y = transformedSvgPoint.y / slideHeight * 100;
-    // var outerDiv = document.getElementById("textDrawOuterDiv");
-    // outerDiv.style.display = 'none';
-    // this.currentHighLightID = '';
+    //highlight text
+    var transformedSvgPoint = getTransformedSvgPoint(clientX, clientY);
+    transformedSvgPoint.x = transformedSvgPoint.x / slideWidth * 100;
+    transformedSvgPoint.y = transformedSvgPoint.y / slideHeight * 100;
+    var outerDiv = document.getElementById("textDrawOuterDiv");
+    outerDiv.style.display = 'none';
+    this.currentHighLightID = '';
 
-    // this.annotationArray.map((annotation, index) => {
-    //   if(annotation.annotationInfo.x <= transformedSvgPoint.x &&  transformedSvgPoint.x <= annotation.annotationInfo.x + annotation.annotationInfo.textBoxWidth && annotation.annotationInfo.y <= transformedSvgPoint.y &&  transformedSvgPoint.y <= annotation.annotationInfo.y + annotation.annotationInfo.textBoxHeight) {
-    //     outerDiv.style.display = 'inline-block';
-    //     outerDiv.style.left = annotation.annotationInfo.x + '%';
-    //     outerDiv.style.top = annotation.annotationInfo.y + '%';
-    //     outerDiv.style.width = annotation.annotationInfo.textBoxWidth + '%';
-    //     outerDiv.style.height = annotation.annotationInfo.textBoxHeight + '%';
-    //     this.currentHighLightID = annotation._id;
-    //     return;
-    //   }
-    // });
+    this.annotationArray.map((annotation, index) => {
+      if(annotation.annotationInfo.x <= transformedSvgPoint.x &&  transformedSvgPoint.x <= annotation.annotationInfo.x + annotation.annotationInfo.textBoxWidth && annotation.annotationInfo.y <= transformedSvgPoint.y &&  transformedSvgPoint.y <= annotation.annotationInfo.y + annotation.annotationInfo.textBoxHeight) {
+        outerDiv.style.display = 'inline-block';
+        outerDiv.style.left = annotation.annotationInfo.x + '%';
+        outerDiv.style.top = annotation.annotationInfo.y + '%';
+        outerDiv.style.width = annotation.annotationInfo.textBoxWidth + '%';
+        outerDiv.style.height = annotation.annotationInfo.textBoxHeight + '%';
+        this.currentHighLightID = annotation._id;
+        return;
+      }
+    });
     // this.commonDrawMoveHandler(clientX, clientY);
   }
 
@@ -527,7 +528,6 @@ export default class TextDrawListener extends Component {
   
   // Add element eraser annotation for editable text
   addTextElementEraser(points, status, id) {
-    console.log("addTextElementEraser");
     const {
       whiteboardId,
       userId,
@@ -597,7 +597,6 @@ export default class TextDrawListener extends Component {
   }
 
   handleDrawText(startPoint, width, height, status, id, text) {
-    // console.log("handleDrawText", startPoint, width, height, status, id, text);
     if(startPoint.x === undefined || startPoint.y === undefined || height === undefined || status === undefined)
       return;
     const {
@@ -769,7 +768,8 @@ export default class TextDrawListener extends Component {
       overflow: 'hidden',
       background: 'transparent',
       fontFamily: 'Arial, sans-serif',
-      color: AnnotationHelper.getFormattedColor(drawSettings.color),
+      color: "rgba(255, 255, 255, 0)", 
+      caretColor: AnnotationHelper.getFormattedColor(drawSettings.color), 
       fontSize: drawSettings.textFontSize,
       lineHeight: 1,
       whiteSpace: 'nowrap'

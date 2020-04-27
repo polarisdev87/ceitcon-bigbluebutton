@@ -175,7 +175,6 @@ const proccessAnnotationsQueue = async () => {
 
   const annotations = annotationsQueue.splice(0, queueSize);
 
-  // console.log('annotationQueue.length', annotationsQueue, annotationsQueue.length);
   await makeCall('sendBulkAnnotations', annotations.filter(({ id }) => !discardedList.includes(id)));
 
   // ask tiago
@@ -193,7 +192,7 @@ export function sendAnnotation(annotation) {
   if (!annotationsSenderIsRunning) setTimeout(proccessAnnotationsQueue, annotationsBufferTimeMin);
 
   // skip optimistic for draw end since the smoothing is done in akka
-  // if (annotation.status === DRAW_END) return;
+  if (annotation.status === DRAW_END && annotation.annotationType != 'text') return;
 
   const { position, ...relevantAnotation } = annotation;
   const queryFake = addAnnotationQuery(
