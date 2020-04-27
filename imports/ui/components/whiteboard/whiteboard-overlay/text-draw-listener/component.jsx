@@ -45,7 +45,6 @@ export default class TextDrawListener extends Component {
     this.annotationArray = [];
     //current textarea text to add new text annotation.
     this.currentTextValue = '';
-    //
     this.updateTextValue = '';
     this.currentHighLightID = '';
 
@@ -63,6 +62,7 @@ export default class TextDrawListener extends Component {
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
     this.handleMouseUp = this.handleMouseUp.bind(this);
+    this.handleTextChange = this.handleTextChange.bind(this);
     this.resetState = this.resetState.bind(this);
     this.sendLastMessage = this.sendLastMessage.bind(this);
     this.handleTouchStart = this.handleTouchStart.bind(this);
@@ -272,22 +272,23 @@ export default class TextDrawListener extends Component {
 
     // escape from editing status
     if(isDrawing && isLeftClick) {
+      // Set tempdiv content with current textarea text
       var textTempDiv = document.getElementById("textDrawTempDiv");      
       var textDrawValue = this.textDrawValue.value;
       textTempDiv.innerHTML = textDrawValue;
       this.currentTextValue = textDrawValue;
-
+      // Confirm clicked point is in text area
       const transformedSvgPoint = getTransformedSvgPoint(clientX, clientY);
-
       if(transformedSvgPoint.x < this.initialX || transformedSvgPoint.x > this.initialX + textTempDiv.clientWidth || transformedSvgPoint.y < this.initialY || transformedSvgPoint.y > this.initialY + textTempDiv.clientHeight)
       {
+        // If clicked point is not in text area
         this.setState({
           textBoxWidth: textTempDiv.clientWidth,
           textBoxHeight: textTempDiv.clientHeight,
           isUpdatedText: false
         });
         this.customDrawEndHandler(textTempDiv.clientWidth, textTempDiv.clientHeight);
-        this.sendLastMessage();
+        return;
       }
     }
 
@@ -432,20 +433,57 @@ export default class TextDrawListener extends Component {
     sendAnnotation(annotation, whiteboardId);
   }
 
+  //main textare change handler
+  handleTextChange(e) {
+    // const {
+    //   textBoxX,
+    //   textBoxY,
+    //   isDrawing
+    // } = this.state;
+    // const {
+    //   actions,
+    //   slideWidth,
+    //   slideHeight,
+    // } = this.props;
+
+    // if(!isDrawing) return;
+
+    // this.currentStatus = DRAW_UPDATE;
+    // const {
+    //   generateNewShapeId,
+    //   getCurrentShapeId,
+    //   setTextShapeActiveId,
+    // } = actions;
+
+    // this.currentX = (textBoxX / slideWidth) * 100;
+    // this.currentY = (textBoxY / slideHeight) * 100;
+    // this.handleDrawText(
+    //   { x: this.currentX, y: this.currentY },
+    //   0, 0,
+    //   this.currentStatus,
+    //   generateNewShapeId(),
+    //   e.target.value,
+    // );
+  }
+
   commonDrawStartHandler(clientX, clientY) {
     const {
       actions,
+      slideWidth,
+      slideHeight,
     } = this.props;
 
     const {
       getTransformedSvgPoint,
     } = actions;
 
+    // saving initial X and Y coordinates for further displaying of the textarea
     const transformedSvgPoint = getTransformedSvgPoint(clientX, clientY);
 
-    // saving initial X and Y coordinates for further displaying of the textarea
     this.initialX = transformedSvgPoint.x;
     this.initialY = transformedSvgPoint.y;
+    this.currentX = transformedSvgPoint.x / slideWidth * 100;
+    this.currentY = transformedSvgPoint.y / slideHeight * 100;
 
     this.setState({
       textBoxX: transformedSvgPoint.x,
@@ -483,7 +521,7 @@ export default class TextDrawListener extends Component {
       this.currentTextValue
     );
 
-    // this.resetState();
+    this.resetState();
   }
 
   resetState() {
@@ -557,7 +595,6 @@ export default class TextDrawListener extends Component {
     });
   }
 
-
   commonDrawEndHandler() {
     const {
       actions,
@@ -615,6 +652,7 @@ export default class TextDrawListener extends Component {
       isUpdatedText: false
     });
   }
+  
   // Difference between commonDrawEndHandler & customDrawEndHandler
   // customDrawEndHandler has different parameters from commonDrawEndHandler
   customDrawEndHandler(textBoxWidth, textBoxHeight) {
@@ -644,11 +682,9 @@ export default class TextDrawListener extends Component {
 
     // coordinates and width/height of the textarea in percentages of the current slide
     // saving them in the class since they will be used during all updates
-    this.currentX = (textBoxX / slideWidth) * 100;
-    this.currentY = (textBoxY / slideHeight) * 100;
     this.currentWidth = (textBoxWidth / slideWidth) * 100;
     this.currentHeight = (textBoxHeight / slideHeight) * 100;
-    this.currentStatus = DRAW_START;
+    this.currentStatus = DRAW_END;
     this.handleDrawText(
       { x: this.currentX, y: this.currentY },
       this.currentWidth,
@@ -659,22 +695,10 @@ export default class TextDrawListener extends Component {
     );
 
     setTextShapeActiveId(getCurrentShapeId());
-
-    this.updateTextValue = '';
-    this.currentHighLightID = '';
-
-    this.setState({
-      isWritingText: true,
-      isDrawing: false,
-      textBoxX: undefined,
-      textBoxY: undefined,
-      textBoxWidth: 0,
-      textBoxHeight: 0,
-      isUpdatedText: false
-    });
   }
 
   handleDrawText(startPoint, width, height, status, id, text) {
+    console.log('handleDrawText', startPoint, width, height, status, id, text);
     const {
       whiteboardId,
       userId,
@@ -822,7 +846,7 @@ export default class TextDrawListener extends Component {
       >
         {isDrawing
             ? (
-              <textarea id="textDrawArea" spellCheck="false" style={textDrawAreaStyle} ref={e => this.textDrawValue = e} defaultValue={isUpdatedText ? this.updateTextValue : ''}/>
+              <textarea id="textDrawArea" spellCheck="false" style={textDrawAreaStyle} ref={e => this.textDrawValue = e} defaultValue={isUpdatedText ? this.updateTextValue : ''} onChange={this.handleTextChange}/>
           )
           : null }
           <div id="textDrawTempDiv" style={textDrawTempStyle}></div>

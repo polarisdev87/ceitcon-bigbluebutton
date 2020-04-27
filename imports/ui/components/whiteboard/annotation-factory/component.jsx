@@ -39,7 +39,7 @@ export default class AnnotationFactory extends Component {
     var annotationArray = [];
     var annotationVisible = new Array(staticItems.length).fill(1);
 
-    // console.log("factory staticitems", staticItems);
+    console.log("factory staticitems", staticItems);
 
     if(staticItems) {
       staticItems.map((annotationDef, index) => {
