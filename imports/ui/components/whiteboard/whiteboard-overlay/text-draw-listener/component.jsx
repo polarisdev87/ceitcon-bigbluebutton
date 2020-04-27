@@ -247,18 +247,14 @@ export default class TextDrawListener extends Component {
   handleMouseDown(event) {
     const {
       isDrawing,
-      isWritingText,
     } = this.state;
 
     const {
-      slideWidth,
-      slideHeight,
       actions,
     } = this.props;
 
     const {
       getTransformedSvgPoint,
-      generateNewShapeId
     } = actions;
 
     const isLeftClick = event.button === 0;
@@ -392,80 +388,6 @@ export default class TextDrawListener extends Component {
     // this.commonDrawEndHandler();
   }
 
-  // Add element eraser annotation for editable text
-  addTextElementEraser(points, status, id) {
-    console.log("addTextElementEraser");
-    const {
-      whiteboardId,
-      userId,
-      actions,
-      drawSettings,
-    } = this.props;
-
-    const {
-      normalizeThickness,
-      sendAnnotation,
-    } = actions;
-
-    const {
-      thickness,
-      color,
-    } = drawSettings;
-
-    const annotation = {
-      id,
-      status,
-      annotationType: 'elementEraser',
-      annotationInfo: {
-        color,
-        thickness: normalizeThickness(thickness),
-        points,
-        id,
-        whiteboardId,
-        status,
-        type: 'elementEraser',
-      },
-      wbId: whiteboardId,
-      userId,
-      position: 0,
-    };
-
-    sendAnnotation(annotation, whiteboardId);
-  }
-
-  //main textare change handler
-  handleTextChange(e) {
-    // const {
-    //   textBoxX,
-    //   textBoxY,
-    //   isDrawing
-    // } = this.state;
-    // const {
-    //   actions,
-    //   slideWidth,
-    //   slideHeight,
-    // } = this.props;
-
-    // if(!isDrawing) return;
-
-    // this.currentStatus = DRAW_UPDATE;
-    // const {
-    //   generateNewShapeId,
-    //   getCurrentShapeId,
-    //   setTextShapeActiveId,
-    // } = actions;
-
-    // this.currentX = (textBoxX / slideWidth) * 100;
-    // this.currentY = (textBoxY / slideHeight) * 100;
-    // this.handleDrawText(
-    //   { x: this.currentX, y: this.currentY },
-    //   0, 0,
-    //   this.currentStatus,
-    //   generateNewShapeId(),
-    //   e.target.value,
-    // );
-  }
-
   commonDrawStartHandler(clientX, clientY) {
     const {
       actions,
@@ -489,76 +411,6 @@ export default class TextDrawListener extends Component {
       textBoxX: transformedSvgPoint.x,
       textBoxY: transformedSvgPoint.y,
       isDrawing: true,
-    });
-  }
-
-  sendLastMessage() {
-    const {
-      drawSettings,
-      actions,
-    } = this.props;
-
-    // const {
-    //   isWritingText,
-    // } = this.state;
-
-    // if (!isWritingText) {
-    //   return;
-    // }
-
-    const {
-      getCurrentShapeId,
-    } = actions;
-
-    this.currentStatus = DRAW_END;
-
-    this.handleDrawText(
-      { x: this.currentX, y: this.currentY },
-      this.currentWidth,
-      this.currentHeight,
-      this.currentStatus,
-      getCurrentShapeId(),
-      this.currentTextValue
-    );
-
-    this.resetState();
-  }
-
-  resetState() {
-    const {
-      actions,
-    } = this.props;
-    // resetting the current drawing state
-    // window.removeEventListener('mouseup', this.handleMouseUp);
-    // window.removeEventListener('mousemove', this.handleMouseMove, true);
-    // touchend, touchmove and touchcancel are removed on devices
-    // window.removeEventListener('touchend', this.handleTouchEnd, { passive: false });
-    // window.removeEventListener('touchmove', this.handleTouchMove, { passive: false });
-    // window.removeEventListener('touchcancel', this.handleTouchCancel, true);
-
-    // resetting the text shape session values
-    actions.resetTextShapeSession();
-    // resetting the current state
-    this.currentX = undefined;
-    this.currentY = undefined;
-    this.currentWidth = undefined;
-    this.currentHeight = undefined;
-    this.currentStatus = '';
-    this.initialX = undefined;
-    this.initialY = undefined;
-
-    this.currentTextValue = '';
-    this.updateTextValue = '';
-    this.currentHighLightID = '';
-
-    this.setState({
-      isDrawing: false,
-      isWritingText: false,
-      textBoxX: undefined,
-      textBoxY: undefined,
-      textBoxWidth: 0,
-      textBoxHeight: 0,
-      isUpdatedText: false
     });
   }
 
@@ -697,8 +549,81 @@ export default class TextDrawListener extends Component {
     setTextShapeActiveId(getCurrentShapeId());
   }
 
+  // Add element eraser annotation for editable text
+  addTextElementEraser(points, status, id) {
+    console.log("addTextElementEraser");
+    const {
+      whiteboardId,
+      userId,
+      actions,
+      drawSettings,
+    } = this.props;
+
+    const {
+      normalizeThickness,
+      sendAnnotation,
+    } = actions;
+
+    const {
+      thickness,
+      color,
+    } = drawSettings;
+
+    const annotation = {
+      id,
+      status,
+      annotationType: 'elementEraser',
+      annotationInfo: {
+        color,
+        thickness: normalizeThickness(thickness),
+        points,
+        id,
+        whiteboardId,
+        status,
+        type: 'elementEraser',
+      },
+      wbId: whiteboardId,
+      userId,
+      position: 0,
+    };
+
+    sendAnnotation(annotation, whiteboardId);
+  }
+
+  //main textare change handler
+  handleTextChange(e) {
+    // const {
+    //   textBoxX,
+    //   textBoxY,
+    //   isDrawing
+    // } = this.state;
+    // const {
+    //   actions,
+    //   slideWidth,
+    //   slideHeight,
+    // } = this.props;
+
+    // if(!isDrawing) return;
+
+    // this.currentStatus = DRAW_UPDATE;
+    // const {
+    //   generateNewShapeId,
+    //   getCurrentShapeId,
+    //   setTextShapeActiveId,
+    // } = actions;
+
+    // this.currentX = (textBoxX / slideWidth) * 100;
+    // this.currentY = (textBoxY / slideHeight) * 100;
+    // this.handleDrawText(
+    //   { x: this.currentX, y: this.currentY },
+    //   0, 0,
+    //   this.currentStatus,
+    //   generateNewShapeId(),
+    //   e.target.value,
+    // );
+  }
+
   handleDrawText(startPoint, width, height, status, id, text) {
-    console.log('handleDrawText', startPoint, width, height, status, id, text);
     const {
       whiteboardId,
       userId,
@@ -745,6 +670,76 @@ export default class TextDrawListener extends Component {
     }
 
     sendAnnotation(annotation, whiteboardId);
+  }
+
+  sendLastMessage() {
+    const {
+      drawSettings,
+      actions,
+    } = this.props;
+
+    // const {
+    //   isWritingText,
+    // } = this.state;
+
+    // if (!isWritingText) {
+    //   return;
+    // }
+
+    const {
+      getCurrentShapeId,
+    } = actions;
+
+    this.currentStatus = DRAW_END;
+
+    this.handleDrawText(
+      { x: this.currentX, y: this.currentY },
+      this.currentWidth,
+      this.currentHeight,
+      this.currentStatus,
+      getCurrentShapeId(),
+      this.currentTextValue
+    );
+
+    this.resetState();
+  }
+
+  resetState() {
+    const {
+      actions,
+    } = this.props;
+    // resetting the current drawing state
+    // window.removeEventListener('mouseup', this.handleMouseUp);
+    // window.removeEventListener('mousemove', this.handleMouseMove, true);
+    // touchend, touchmove and touchcancel are removed on devices
+    // window.removeEventListener('touchend', this.handleTouchEnd, { passive: false });
+    // window.removeEventListener('touchmove', this.handleTouchMove, { passive: false });
+    // window.removeEventListener('touchcancel', this.handleTouchCancel, true);
+
+    // resetting the text shape session values
+    actions.resetTextShapeSession();
+    // resetting the current state
+    this.currentX = undefined;
+    this.currentY = undefined;
+    this.currentWidth = undefined;
+    this.currentHeight = undefined;
+    this.currentStatus = '';
+    this.initialX = undefined;
+    this.initialY = undefined;
+
+    this.currentTextValue = '';
+    this.updateTextValue = '';
+    this.currentHighLightID = '';
+
+    this.setState({
+      isDrawing: false,
+      isWritingText: false,
+      textBoxX: undefined,
+      textBoxY: undefined,
+      textBoxWidth: 0,
+      textBoxHeight: 0,
+      isUpdatedText: false
+    });
   }
 
   discardAnnotation() {
