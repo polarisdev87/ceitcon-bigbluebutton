@@ -726,7 +726,7 @@ class WhiteboardToolbar extends Component {
         label={intl.formatMessage(intlMessages.toolbarUndoAnnotation)}
         icon="undo"
         onItemClick={this.handleUndo}
-        className={styles.toolbarButton}
+        className={"toolbar__button--undo " + styles.toolbarButton}
       />
     );
   }

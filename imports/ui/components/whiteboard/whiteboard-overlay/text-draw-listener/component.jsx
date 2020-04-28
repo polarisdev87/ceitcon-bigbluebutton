@@ -76,11 +76,14 @@ export default class TextDrawListener extends Component {
     this.handleTouchCancel = this.handleTouchCancel.bind(this);
     this.checkTextAreaFocus = this.checkTextAreaFocus.bind(this);
     this.handleclearbuttonClicked = this.handleclearbuttonClicked.bind(this);
+    this.handleUndobuttonClicked = this.handleUndobuttonClicked.bind(this);
   }
 
   componentDidMount() {
     window.addEventListener('beforeunload', this.sendLastMessage);
     document.getElementsByClassName("toolbar__button--clear")[0].addEventListener('click', this.handleclearbuttonClicked);
+    this.initializeTextArray();
+    document.getElementsByClassName("toolbar__button--undo")[0].addEventListener('click', this.handleUndobuttonClicked);
     this.initializeTextArray();
   }
 
@@ -301,6 +304,10 @@ export default class TextDrawListener extends Component {
               //remove highlight
               var outerDiv = document.getElementById("textDrawOuterDiv");
               outerDiv.style.display = 'none';
+              // Add previous annotation to queue.
+              // this.addPreviousTextAnnotation(annotation);
+              // remove annotation from annotation array
+              this.removeAnnotation(this.currentHighLightID);
               //open textarea with previous text
               var pixelX = annotation.annotationInfo.x / 100 * slideWidth;
               var pixelY = annotation.annotationInfo.y / 100 * slideHeight;
@@ -540,6 +547,7 @@ export default class TextDrawListener extends Component {
         this.annotationArray.push(annotation);
       }
     });
+    console.log("initializer", this.annotationArray);
   }
 
   //hander for clear all button
@@ -547,44 +555,36 @@ export default class TextDrawListener extends Component {
     this.annotationArray = [];
   }
 
-  // Add element eraser annotation for editable text
-  addTextElementEraser(points, status, id) {
+  handleUndobuttonClicked() {
+    const length = this.annotationArray.length;
+    this.annotationArray.splice(length - 1, 1);
+  }
+
+  // Add previous text annotation for editable text
+  addPreviousTextAnnotation(annotation) {
     const {
       whiteboardId,
-      userId,
       actions,
-      drawSettings,
     } = this.props;
 
     const {
-      normalizeThickness,
-      sendAnnotation,
+      sendAnnotation
     } = actions;
 
-    const {
-      thickness,
-      color,
-    } = drawSettings;
+    let previousAnnoation = annotation;
+    previousAnnoation.annotationType = "ptext";
+    previousAnnoation.id = previousAnnoation.id + 'ptext';
+    sendAnnotation(previousAnnoation, whiteboardId);
+  }
 
-    const annotation = {
-      id,
-      status,
-      annotationType: 'elementEraser',
-      annotationInfo: {
-        color,
-        thickness: normalizeThickness(thickness),
-        points,
-        id,
-        whiteboardId,
-        status,
-        type: 'elementEraser',
-      },
-      wbId: whiteboardId,
-      userId,
-      position: 0,
-    };
-
-    sendAnnotation(annotation, whiteboardId);
+  removeAnnotation(id) {
+    for(let i = 0; i < this.annotationArray.length; i ++)
+    {
+      if(this.annotationArray[i].id == id) {
+        this.annotationArray.splice(i, 1);
+        break;
+      }
+    }
   }
 
   //main textare change handler

@@ -1,6 +1,7 @@
 import { check } from 'meteor/check';
 
 const ANNOTATION_TYPE_TEXT = 'text';
+const ANNOTATION_TYPE_PTEXT = 'ptext';
 const ANNOTATION_TYPE_PENCIL = 'pencil';
 const ANNOTATION_TYPE_ERASER = 'eraser';
 const DEFAULT_TEXT_WIDTH = 30;
@@ -93,6 +94,33 @@ function handleTextUpdate(meetingId, whiteboardId, userId, annotation) {
       break;
   }
 
+  return { selector, modifier };
+}
+
+function handlePTextUpdate(meetingId, whiteboardId, userId, annotation) {
+  const {
+    id, status, annotationType, annotationInfo, wbId, position,
+  } = annotation;
+  console.log(annotation);
+
+  const selector = {
+    meetingId,
+    id,
+    userId,
+  };
+  const modifier = {
+    $set: {
+      whiteboardId,
+      meetingId,
+      id,
+      status,
+      annotationType,
+      annotationInfo,
+      position,
+      wbId,
+    },
+    $inc: { version: 1 },
+  };
   return { selector, modifier };
 }
 
@@ -250,6 +278,8 @@ export default function addAnnotation(meetingId, whiteboardId, userId, annotatio
   switch (annotation.annotationType) {
     case ANNOTATION_TYPE_TEXT:
       return handleTextUpdate(meetingId, whiteboardId, userId, annotation);
+    case ANNOTATION_TYPE_PTEXT:
+      return handlePTextUpdate(meetingId, whiteboardId, userId, annotation);
     case ANNOTATION_TYPE_PENCIL:
       return handlePencilUpdate(meetingId, whiteboardId, userId, annotation);
     case ANNOTATION_TYPE_ERASER:
