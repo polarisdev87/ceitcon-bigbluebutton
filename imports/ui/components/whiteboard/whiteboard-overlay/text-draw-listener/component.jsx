@@ -77,7 +77,6 @@ export default class TextDrawListener extends Component {
 
   componentDidMount() {
     window.addEventListener('beforeunload', this.sendLastMessage);
-    console.log("componentDidMount");
     this.initializeTextArray();
   }
 
@@ -87,7 +86,6 @@ export default class TextDrawListener extends Component {
   componentWillReceiveProps(nextProps) {
     const { drawSettings, whiteboardId, slideWidth, slideHeight} = this.props;
     const nextDrawsettings = nextProps.drawSettings;
-    console.log("componentWillReceiveProps");
     // if (drawSettings.textShapeActiveId !== '' && nextDrawsettings.textShapeActiveId === '') {
     //   this.resetState();
     // }
