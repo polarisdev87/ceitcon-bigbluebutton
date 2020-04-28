@@ -27,6 +27,7 @@ export default class TextDrawListener extends Component {
 
       // to track the status of writing a text shape after the textarea has been drawn
       isWritingText: false,
+      // to check current status is updating text
       isUpdatedText: false,
     };
 
@@ -76,6 +77,8 @@ export default class TextDrawListener extends Component {
 
   componentDidMount() {
     window.addEventListener('beforeunload', this.sendLastMessage);
+    console.log("componentDidMount");
+    this.initializeTextArray();
   }
 
 
@@ -84,38 +87,10 @@ export default class TextDrawListener extends Component {
   componentWillReceiveProps(nextProps) {
     const { drawSettings, whiteboardId, slideWidth, slideHeight} = this.props;
     const nextDrawsettings = nextProps.drawSettings;
-
-    // initialize text annotation array for highlights and editable text
-    var annotationFullArray = [];
-
-    const staticItems = AnnotationGroupService.getCurrentAnnotationsInfo(whiteboardId);
-    staticItems.map((annotationDef, index) => {
-      const annotation = AnnotationService.getAnnotationById(annotationDef._id);
-      annotationFullArray.push(annotation);
-    });
-
-    var annotationVisible = new Array(annotationFullArray.length).fill(1);
-
-    annotationFullArray.map((annotation, index) => {
-      if(annotation.annotationType == "elementEraser") { 
-        for(let i = 0; i < index; i ++) {
-          if(annotationFullArray[i].annotationType == "text" && annotationVisible[i]) {
-            annotationVisible[i] = AnnotationHelper.isDeletedAnnotation(annotation, annotationFullArray[i], slideWidth, slideHeight);
-          }
-        }
-      }
-    });
-
-    this.annotationArray = [];
-    annotationFullArray.map((annotation, index) => {
-      if(annotation.annotationType == "text" && annotationVisible[index]) {
-        this.annotationArray.push(annotation);
-      }
-    });
-
-    if (drawSettings.textShapeActiveId !== '' && nextDrawsettings.textShapeActiveId === '') {
-      this.resetState();
-    }
+    console.log("componentWillReceiveProps");
+    // if (drawSettings.textShapeActiveId !== '' && nextDrawsettings.textShapeActiveId === '') {
+    //   this.resetState();
+    // }
   }
 
   componentDidUpdate(prevProps) {
@@ -259,6 +234,8 @@ export default class TextDrawListener extends Component {
 
     const {
       getTransformedSvgPoint,
+      generateNewShapeId,
+      setCurrentShapeId
     } = actions;
 
     const isLeftClick = event.button === 0;
@@ -293,6 +270,14 @@ export default class TextDrawListener extends Component {
             textBoxHeight: textTempDiv.clientHeight,
             isUpdatedText: false
           });
+          if(this.currentHighLightID != '') {
+            for(let i = 0; i < this.annotationArray.length; i ++) {
+              if(this.annotationArray[i].id == this.currentHighLightID) {
+                this.annotationArray[i].annotationInfo.text = textDrawValue;
+                break;
+              }
+            }
+          }
           this.sendLastMessage();
         }
       }
@@ -310,30 +295,29 @@ export default class TextDrawListener extends Component {
           this.commonDrawStartHandler(clientX, clientY);
         } 
         else {
-          // this.annotationArray.map((annotation, index) => {
-          //   if(annotation._id == this.currentHighLightID) {
-          //     //remove highlight
-          //     var outerDiv = document.getElementById("textDrawOuterDiv");
-          //     outerDiv.style.display = 'none';
-          //     this.currentHighLightID = '';
-          //     //open textarea with previous text
-          //     var pixelX = annotation.annotationInfo.x / 100 * slideWidth;
-          //     var pixelY = annotation.annotationInfo.y / 100 * slideHeight;
-          //     this.initialX = pixelX;
-          //     this.initialY = pixelY;
-          //     this.updateTextValue = annotation.annotationInfo.text;
-
-          //     const removedPoint = [annotation.annotationInfo.x + 0.005, annotation.annotationInfo.y + 0.005];
-          //     this.addTextElementEraser(removedPoint, DRAW_END, generateNewShapeId());
-
-          //     this.setState({
-          //       textBoxX: pixelX,
-          //       textBoxY: pixelY,
-          //       isDrawing: true,
-          //       isUpdatedText: true
-          //     });
-          //   }
-          // });
+          this.annotationArray.map((annotation, index) => {
+            if(annotation.id == this.currentHighLightID) {
+              //remove highlight
+              var outerDiv = document.getElementById("textDrawOuterDiv");
+              outerDiv.style.display = 'none';
+              //open textarea with previous text
+              var pixelX = annotation.annotationInfo.x / 100 * slideWidth;
+              var pixelY = annotation.annotationInfo.y / 100 * slideHeight;
+              this.initialX = pixelX;
+              this.initialY = pixelY;
+              this.currentX = pixelX / slideWidth * 100;
+              this.currentY = pixelY / slideHeight * 100;
+              this.updateTextValue = annotation.annotationInfo.text;
+              setCurrentShapeId(annotation.id);
+              this.setState({
+                textBoxX: pixelX,
+                textBoxY: pixelY,
+                isDrawing: true,
+                isUpdatedText: true
+              });
+              return;
+            }
+          });
         }
       }
     } 
@@ -383,7 +367,7 @@ export default class TextDrawListener extends Component {
         outerDiv.style.top = annotation.annotationInfo.y + '%';
         outerDiv.style.width = annotation.annotationInfo.textBoxWidth + '%';
         outerDiv.style.height = annotation.annotationInfo.textBoxHeight + '%';
-        this.currentHighLightID = annotation._id;
+        this.currentHighLightID = annotation.id;
         return;
       }
     });
@@ -525,7 +509,39 @@ export default class TextDrawListener extends Component {
       isUpdatedText: false
     });
   }
-  
+
+  // initialize text annotation array for highlights and editable text
+  initializeTextArray() {
+    const {whiteboardId, slideWidth, slideHeight} = this.props;
+    var annotationFullArray = [];
+
+    const staticItems = AnnotationGroupService.getCurrentAnnotationsInfo(whiteboardId);
+    staticItems.map((annotationDef, index) => {
+      const annotation = AnnotationService.getAnnotationById(annotationDef._id);
+      annotationFullArray.push(annotation);
+    });
+
+    var annotationVisible = new Array(annotationFullArray.length).fill(1);
+
+    annotationFullArray.map((annotation, index) => {
+      if(annotation.annotationType == "elementEraser") { 
+        for(let i = 0; i < index; i ++) {
+          if(annotationFullArray[i].annotationType == "text" && annotationVisible[i]) {
+            annotationVisible[i] = AnnotationHelper.isDeletedAnnotation(annotation, annotationFullArray[i], slideWidth, slideHeight);
+          }
+        }
+      }
+    });
+
+    this.annotationArray = [];
+    annotationFullArray.map((annotation, index) => {
+      if(annotation.annotationType == "text" && annotationVisible[index]) {
+        this.annotationArray.push(annotation);
+      }
+    });
+    console.log("initializer", this.annotationArray);
+  }
+
   // Add element eraser annotation for editable text
   addTextElementEraser(points, status, id) {
     const {

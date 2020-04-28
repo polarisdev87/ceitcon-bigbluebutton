@@ -35,6 +35,7 @@ export default class WhiteboardOverlay extends Component {
     this.count = 0;
 
     this.getCurrentShapeId = this.getCurrentShapeId.bind(this);
+    this.setCurrentShapeId = this.setCurrentShapeId.bind(this);
     this.generateNewShapeId = this.generateNewShapeId.bind(this);
     this.getTransformedSvgPoint = this.getTransformedSvgPoint.bind(this);
     this.checkIfOutOfBounds = this.checkIfOutOfBounds.bind(this);
@@ -46,6 +47,10 @@ export default class WhiteboardOverlay extends Component {
 
   getCurrentShapeId() {
     return this.currentShapeId;
+  }
+
+  setCurrentShapeId(id) {
+    this.currentShapeId = id;
   }
 
   // this function receives an event from the mouse event attached to the window
@@ -238,6 +243,7 @@ export default class WhiteboardOverlay extends Component {
       checkIfOutOfBounds: this.checkIfOutOfBounds,
       svgCoordinateToPercentages: this.svgCoordinateToPercentages,
       getCurrentShapeId: this.getCurrentShapeId,
+      setCurrentShapeId: this.setCurrentShapeId,
       generateNewShapeId: this.generateNewShapeId,
       normalizeThickness: this.normalizeThickness,
       normalizeFont: this.normalizeFont,

@@ -168,6 +168,9 @@ const drawShape = (canvas, context, type, annotationInfo, slideWidth, slideHeigh
                     }
                 }
             } else {
+                if(commands === undefined) {
+                  return;
+                }
                 for (i = 0, j = 0; i < commands.length; i += 1) {
                     switch (commands[i]) {
                         // MOVE_TO - consumes 1 pair of values
