@@ -48,7 +48,9 @@ export default class TextDrawListener extends Component {
     //current textarea text
     this.currentTextValue = '';
 
+    // textarea value for updating text
     this.updateTextValue = '';
+    // current highlighted annotation id
     this.currentHighLightID = '';
 
     // current text shape status, it may change between DRAW_START, DRAW_UPDATE, DRAW_END
@@ -73,13 +75,14 @@ export default class TextDrawListener extends Component {
     this.handleTouchEnd = this.handleTouchEnd.bind(this);
     this.handleTouchCancel = this.handleTouchCancel.bind(this);
     this.checkTextAreaFocus = this.checkTextAreaFocus.bind(this);
+    this.handleclearbuttonClicked = this.handleclearbuttonClicked.bind(this);
   }
 
   componentDidMount() {
     window.addEventListener('beforeunload', this.sendLastMessage);
+    document.getElementsByClassName("toolbar__button--clear")[0].addEventListener('click', this.handleclearbuttonClicked);
     this.initializeTextArray();
   }
-
 
   // If the activeId suddenly became empty - this means the shape was deleted
   // While the user was drawing it. So we are resetting the state.
@@ -537,7 +540,11 @@ export default class TextDrawListener extends Component {
         this.annotationArray.push(annotation);
       }
     });
-    console.log("initializer", this.annotationArray);
+  }
+
+  //hander for clear all button
+  handleclearbuttonClicked() {
+    this.annotationArray = [];
   }
 
   // Add element eraser annotation for editable text

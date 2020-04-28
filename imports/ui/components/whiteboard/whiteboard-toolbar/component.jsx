@@ -740,7 +740,7 @@ class WhiteboardToolbar extends Component {
         label={intl.formatMessage(intlMessages.toolbarClearAnnotations)}
         icon="delete"
         onItemClick={this.handleClearAll}
-        className={styles.toolbarButton}
+        className={"toolbar__button--clear " + styles.toolbarButton}
       />
     );
   }
